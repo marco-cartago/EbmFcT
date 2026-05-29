@@ -81,7 +81,11 @@ def load_mnist_digit_9(batch_size=64, shuffle=True):
     return train_loader, test_loader
 
 
-def loss(model: EBM, x: torch.Tensor, m: float = 1.0, n_samples: int = 4) -> torch.Tensor:
+def loss(model: EBM,
+         x: torch.Tensor,
+         m: float = 1.0,
+         n_samples: int = 4,
+         device=torch.device("cuda" if torch.cuda.is_available() else "cpu")) -> torch.Tensor:
 
     tru_energy = model(x)
 
@@ -94,10 +98,14 @@ def loss(model: EBM, x: torch.Tensor, m: float = 1.0, n_samples: int = 4) -> tor
     corr_norm = torch.norm(corr, p="fro") - model.n_heads
 
     gen_energy = torch.cat(
-        [model(torch.rand_like(x)) for _ in range(n_samples)]
+        [model(langevin_sample_from(model, torch.rand(1, 1, 28, 28).to(device), n_step=100)[0])
+         for _ in range(n_samples)]
     )
 
-    l = (torch.max(tru_energy) - torch.min(gen_energy)) + corr_norm
+    te = torch.max(tru_energy)
+    ge = torch.min(gen_energy)
+
+    l = (te - ge) + corr_norm
     return l
 
 
@@ -173,12 +181,13 @@ def train(
         train_losses.append(train_loss)
         val_losses.append(val_loss)
 
-        img, energy = hmc_sample_from(
-            model,
-            torch.rand(1, 28, 28).to(model.head_weights.device),
-            n_step=1000
-        )
-        show_image(img, energy, epoch)
+        if epoch % 10 == 0:
+            img, energy = langevin_sample_from(
+                model,
+                torch.rand(1, 1, 28, 28).to(device),
+                n_step=100
+            )
+            show_image(img, energy, epoch)
 
     return train_losses, val_losses
 
@@ -187,7 +196,7 @@ def main():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     batch_sz = 32
-    epochs = 250
+    epochs = 2000
 
     # Data loading
     train_loader, test_loader = load_mnist_digit_9(batch_size=batch_sz)
