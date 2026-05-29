@@ -83,7 +83,7 @@ def leapfrog_step(
 
     x.grad.zero_()
     # Full step for momentum
-    U = M(x)
+    U = M(x, single=True)
     U.backward()
     grad = x.grad
     grad = grad.clamp(-10, 10)
