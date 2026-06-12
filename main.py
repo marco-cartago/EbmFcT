@@ -89,23 +89,25 @@ def loss(model: EBM,
 
     tru_energy = model(x)
 
-    head_outputs = model.head_outputs
-    head_outputs = head_outputs.squeeze(-1)
-    X_centered = head_outputs - head_outputs.mean(dim=0, keepdim=True)
-    cov = X_centered.T @ X_centered / (X_centered.shape[0] - 1)
-    std = X_centered.std(dim=0, unbiased=True, keepdim=True)
-    corr = cov / (std.T @ std)
-    corr_norm = torch.norm(corr, p="fro") - model.n_heads
+    # head_outputs = model.head_outputs
+    # head_outputs = head_outputs.squeeze(-1)
+    # X_centered = head_outputs - head_outputs.mean(dim=0, keepdim=True)
+    # cov = X_centered.T @ X_centered / (X_centered.shape[0] - 1)
+    # std = X_centered.std(dim=0, unbiased=True, keepdim=True)
+    # corr = cov / (std.T @ std)
+    # corr_norm = torch.norm(corr, p="fro") - model.n_heads
 
-    gen_energy = torch.cat(
-        [model(langevin_sample_from(model, torch.rand(1, 1, 28, 28).to(device), n_step=100)[0])
-         for _ in range(n_samples)]
-    )
+    samples = [
+        langevin_sample_from(model, torch.rand(1, 1, 28, 28).to(device), n_step=1000)[0] 
+        for _ in range(n_samples)
+    ]
+
+    gen_energy = torch.cat([model(s) for s in samples])
 
     te = torch.max(tru_energy)
     ge = torch.min(gen_energy)
 
-    l = (te - ge) + corr_norm
+    l = (te - ge) #+ corr_norm
     return l
 
 
@@ -181,11 +183,11 @@ def train(
         train_losses.append(train_loss)
         val_losses.append(val_loss)
 
-        if epoch % 10 == 0:
+        if epoch % 1 == 0:
             img, energy = langevin_sample_from(
                 model,
                 torch.rand(1, 1, 28, 28).to(device),
-                n_step=100
+                n_step=1000
             )
             show_image(img, energy, epoch)
 
@@ -207,7 +209,7 @@ def main():
     for h in model.heads:
         h.to(device)
 
-        # Optim
+    # Optim
     optim = torch.optim.Adam(model.parameters(), 1e-3)
 
     # Model training
