@@ -52,5 +52,5 @@ class EBM(nn.Module):
         h_o = torch.stack([head(x, single=False)
                           for head in self.heads], dim=1).squeeze(-1)
         self.head_outputs = h_o
-        out_pb = torch.sum(h_o, dim=1)
+        out_pb = F.softplus(torch.sum(h_o, dim=1))
         return out_pb
