@@ -24,3 +24,11 @@ python3 main.py
 ```
 
 At this point in time the project is more a QR code generator than an image generator, even so, its interesting to work on.
+
+---
+
+TODO:
+ -[] Try with logsum output
+ -[] Scheduler on langevin steps
+ -[] Langevin sampling on subset of pixel
+

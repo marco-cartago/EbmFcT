@@ -24,7 +24,7 @@ def langevin_step_precond(
     U = M(x)
     U.backward()
     grad = x.grad
-    grad = grad.clamp(-10, 10)
+    grad = grad.clamp(-3, 3)
 
     # Update preconditioner
     precond.mul_(momentum).add_(grad.pow(2), alpha=1-momentum)
