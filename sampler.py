@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-# Langevin dynamics with preconditioning and momentum
+# Langevin dynamics
 # -------------------------------------------------------------------------------------- #
 
 
@@ -31,12 +31,39 @@ def langevin_step_precond(
 
     # Preconditioned step
     step = eta * grad / (precond.sqrt() + 1e-8)
-    noise = torch.randn_like(x) * torch.sqrt(2 * eta /
-                                             (beta * precond.sqrt() + 1e-8))
+    noise = torch.randn_like(x) * torch.sqrt(2 * eta /(beta * precond.sqrt() + 1e-8))
     x.data = x - step + noise
 
     x.grad.zero_()
     return x, precond
+
+
+def langevin_step(
+    x: torch.Tensor,
+    M: nn.Module,
+    eta: float = 1e-3,
+    beta: float = 1.0,
+):
+
+    x.requires_grad_(True)
+    U = M(x)
+    U.backward()
+    grad = x.grad
+
+    if grad is None:
+        raise ValueError("None gradient")
+
+    etaT = torch.tensor((eta,))
+    betaT = torch.tensor((beta,))
+
+    # Preconditioned step
+    step = etaT * grad
+    noise = torch.randn_like(x) * torch.sqrt(2 * etaT /(betaT + 1e-8))
+    x.data = x - step + noise
+    
+    x.grad.zero_()
+
+    return x
 
 
 def langevin_sample_from(
@@ -45,15 +72,21 @@ def langevin_sample_from(
     n_step: int = 1_000,
     eta: float = 1e-3,
     beta: float = 1.0,
-    momentum: float = 0.9
+    momentum: float = 0.9,
+    use_precond: bool = False
 ):
     M.eval()
     x = x0
-    precond = torch.ones_like(x)
 
-    for _ in range(n_step):
-        x, precond = langevin_step_precond(
-            x, M, precond, eta=eta, beta=beta, momentum=momentum)
+    if use_precond:
+        precond = torch.ones_like(x)
+        for _ in range(n_step):
+            x, precond = langevin_step_precond(
+                x, M, precond, eta=eta, beta=beta, momentum=momentum)
+
+    else:
+         for _ in range(n_step):
+            x = langevin_step(x, M, eta=eta, beta=beta)
 
     return (x, M(x))
 
