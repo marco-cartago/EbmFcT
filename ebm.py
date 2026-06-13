@@ -25,6 +25,7 @@ class EnergyHead(nn.Module):
         x = self.MP1(x)
         x = self.C2(x)
         x = self.act(x)
+        x = self.act(x)
 
         x = self.MP2(x)
         x = self.C3(x)
