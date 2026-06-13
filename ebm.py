@@ -12,8 +12,7 @@ class EnergyHead(nn.Module):
         self.MP1 = nn.MaxPool2d(2)
         self.C2 = nn.Conv2d(8, 4, 3)
         self.MP2 = nn.MaxPool2d(2)
-        self.C3 = nn.Conv2d(4, 4, 3)
-        
+        self.C3 = nn.Conv2d(4, 4, 3)        
         self.L1 = nn.Linear(36, 16)
         self.L2 = nn.Linear(16, 1)
         self.act = nn.GELU()
@@ -21,13 +20,12 @@ class EnergyHead(nn.Module):
     def forward(self, x: torch.Tensor, single=False):
         x = self.C1(x)
         x = self.act(x)
-
         x = self.MP1(x)
+
         x = self.C2(x)
         x = self.act(x)
-        x = self.act(x)
-
         x = self.MP2(x)
+
         x = self.C3(x)
         x = x.flatten(start_dim=1)
         x = self.act(x)
