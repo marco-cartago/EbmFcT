@@ -81,11 +81,13 @@ def load_mnist_digit_9(batch_size=64, shuffle=True):
     return train_loader, test_loader
 
 
-def loss(model: EBM,
-         x: torch.Tensor,
-         m: float = 1.0,
-         n_samples: int = 4,
-         device=torch.device("cuda" if torch.cuda.is_available() else "cpu")) -> torch.Tensor:
+def loss(
+    model: EBM,
+    x: torch.Tensor,
+    m: float = 1.0,
+    n_samples: int = 4,
+    device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+) -> torch.Tensor:
 
     tru_energy = model(x)
 
@@ -97,15 +99,16 @@ def loss(model: EBM,
     # corr = cov / (std.T @ std)
     # corr_norm = torch.norm(corr, p="fro") - model.n_heads
 
-    samples = [
-        langevin_sample_from(model, torch.rand(1, 1, 28, 28).to(device), n_step=1000)[0] 
-        for _ in range(n_samples)
-    ]
+    samples = []
+    for i in range(x.size(0)):
+        sample_start = x[i]
+        sample_start = sample_start.unsqueeze(0)
+        samples.append(sample_start)
 
     gen_energy = torch.cat([model(s) for s in samples])
 
-    te = torch.max(tru_energy)
-    ge = torch.min(gen_energy)
+    te = torch.mean(tru_energy)
+    ge = torch.mean(gen_energy)
 
     l = (te - ge) #+ corr_norm
     return l
@@ -183,7 +186,7 @@ def train(
         train_losses.append(train_loss)
         val_losses.append(val_loss)
 
-        if epoch % 1 == 0:
+        if epoch % 10 == 0:
             img, energy = langevin_sample_from(
                 model,
                 torch.rand(1, 1, 28, 28).to(device),
