@@ -16,7 +16,6 @@ def load_fashion_mnist(batch_size=64, shuffle=True):
 
     transform = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Resize((10, 10))
     ])
 
     train_set = datasets.FashionMNIST(
@@ -100,26 +99,26 @@ def loss(
     # corr_norm = torch.norm(corr, p="fro") - model.n_heads
 
     samples = []
+
     for i in range(x.size(0)):
         sample_start = x[i]
         sample_start = sample_start.unsqueeze(0)
-        samples.append(sample_start)
+        sample, _ = langevin_sample_from(model, sample_start, n_step=100)
+        samples.append(sample)
 
     gen_energy = torch.cat([model(s) for s in samples])
 
-    te = torch.mean(tru_energy)
-    ge = torch.mean(gen_energy)
-
-    l = (te - ge) #+ corr_norm
+    l = torch.mean(tru_energy - gen_energy) #+ corr_norm
     return l
 
 
-def train_one_epoch(model, loader, optimizer, criterion, device):
+def train_one_epoch(model, loader, optimizer, criterion, device, s=20):
     model.train()
     running_loss = 0.0
 
     for inputs, _ in tqdm.tqdm(loader):
         inputs = inputs.to(device)
+        inputs += torch.rand_like(inputs) / s
         optimizer.zero_grad()
         loss = criterion(model, inputs)
         loss.backward()
@@ -136,10 +135,8 @@ def validate(model, loader, criterion, device):
     running_loss = 0.0
 
     for inputs, _ in tqdm.tqdm(loader):
-
         inputs = inputs.to(device)
-        g_inputs = inputs.requires_grad_(True)
-        loss = criterion(model, g_inputs)
+        loss = criterion(model, inputs)
         running_loss += loss.item() * inputs.size(0)
 
     running_loss /= len(loader.dataset)
@@ -169,7 +166,6 @@ def train(
 
     train_losses = []
     val_losses = []
-
     model.to(device)
 
     for epoch in range(1, epochs + 1):
@@ -186,10 +182,10 @@ def train(
         train_losses.append(train_loss)
         val_losses.append(val_loss)
 
-        if epoch % 10 == 0:
+        if epoch % 1 == 0:
             img, energy = langevin_sample_from(
                 model,
-                torch.rand(1, 1, 28, 28).to(device),
+                torch.rand((1,1,28,28)).to(device),
                 n_step=1000
             )
             show_image(img, energy, epoch)
@@ -202,6 +198,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     batch_sz = 32
     epochs = 2000
+    torch.manual_seed(0) # Random state
 
     # Data loading
     train_loader, test_loader = load_mnist_digit_9(batch_size=batch_sz)
