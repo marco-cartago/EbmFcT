@@ -172,7 +172,7 @@ def train(
         train_loss = train_one_epoch(
             model, train_loader, optimizer, criterion, device)
         val_loss = 0
-        val_loss = validate(model, val_loader, criterion, device)
+        # val_loss = validate(model, val_loader, criterion, device)
 
         print(
             f"Epoch {epoch}/{epochs} | " +
@@ -210,7 +210,8 @@ def main():
         h.to(device)
 
     # Optim
-    optim = torch.optim.Adam(model.parameters(), 1e-3)
+    # It seems EBMs have issue with moment.
+    optim = torch.optim.Adam(model.parameters(), 1e-3, betas=(0.0, 0.999))
 
     # Model training
     train_losses, val_losses = train(
