@@ -26,7 +26,7 @@ def langevin_step_precond(
     U = M(x)
     U.backward()
     grad = x.grad
-    grad = grad.clamp(-3, 3)
+    grad = grad.clamp(-0.03, 0.03)
 
     # Update preconditioner
     precond.mul_(momentum).add_(grad.pow(2), alpha=1-momentum)
@@ -47,7 +47,6 @@ def langevin_step(
     beta: float = 1.0,
 ):
 
-
     return x
 
 
@@ -61,6 +60,9 @@ def langevin_sample_from(
     use_precond: bool = False
 ):
     M.eval()
+    for p in M.parameters():
+        p.requires_grad = False
+
     x = x0
     x0.requires_grad_(True)
 
@@ -75,27 +77,20 @@ def langevin_sample_from(
         noise = torch.empty_like(x0)
 
         for _ in range(n_step):
-            U = M(x)
+            noise.normal_(0, 0.005)
+            x.data.add_(noise)
+            x.data.clamp_(min=-1.0, max=1.0)
+            U = -M(x)
             U.backward()
             grad = x.grad
             grad.clamp_(-0.03, 0.03)
-
-            if grad is None:
-                raise ValueError("None gradient")
-
-            etaT = torch.tensor((eta,))
-            betaT = torch.tensor((beta,))
-
-            # Preconditioned step
-            noise.normal_(1)
-            noise *= torch.sqrt(2 * etaT /(betaT + 1e-8))
-            step = etaT * grad
-            
-            x.data = x - step + noise
-            x.data.clamp_(0, 1) # Keep pixels in [0,1]
-            
+            x.data.add_(-eta * x.grad.data)
+            x.grad.detach_()
             x.grad.zero_()
+            x.data.clamp_(min = -1.0, max=1.0)
 
+    for p in M.parameters():
+        p.requires_grad = True
 
     return (x, M(x))
 
@@ -195,7 +190,7 @@ def hmc_sample_from(
 
 class Sampler:
 
-    def __init__(self, model, img_shape, sample_size, max_len=8192):
+    def __init__(self, model, img_shape, sample_size, device, max_len=8192):
         """
         Inputs:
             model - Neural network to use for modeling E_theta
@@ -208,6 +203,7 @@ class Sampler:
         self.img_shape = img_shape
         self.sample_size = sample_size
         self.max_len = max_len
+        self.device = device
         self.examples = [(torch.rand((1,)+img_shape)*2-1) for _ in range(self.sample_size)]
 
     def sample_new_exmps(self, steps=60, step_size=10):
@@ -221,7 +217,7 @@ class Sampler:
         n_new = np.random.binomial(self.sample_size, 0.05)
         rand_imgs = torch.rand((n_new,) + self.img_shape) * 2 - 1
         old_imgs = torch.cat(random.choices(self.examples, k=self.sample_size-n_new), dim=0)
-        inp_imgs = torch.cat([rand_imgs, old_imgs], dim=0).detach().to(self.model.device)
+        inp_imgs = torch.cat([rand_imgs, old_imgs], dim=0).detach().to(self.device)
 
         # Perform MCMC sampling
         inp_imgs = Sampler.generate_samples(self.model, inp_imgs, steps=steps, step_size=step_size)
