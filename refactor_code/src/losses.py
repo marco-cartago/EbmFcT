@@ -15,20 +15,13 @@ def cd_loss(model, x_real, x_fake, energy_regularization=0.05, corr_param=0.1, r
         return total, cd, reg, corr
     return total
 
+
 def head_correlation_penalty(H):
-
+    if H.shape[0] < 2:
+        return torch.tensor(0.0, device=H.device)
+    
     H = H - H.mean(dim=0, keepdim=True)
-
-    H = H / (
-        H.std(dim=0, keepdim=True)
-        + 1e-8
-    )
-
+    H = H / (H.std(dim=0, keepdim=True) + 1e-8)
     corr = H.T @ H / (H.shape[0] - 1)
-
-    corr = corr - torch.eye(
-        corr.size(0),
-        device=corr.device
-    )
-
+    corr = corr - torch.eye(corr.size(0), device=corr.device)
     return corr.pow(2).mean()
