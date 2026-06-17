@@ -3,4 +3,4 @@ __pycache__/
 images/
 data/
 *.pyc
-*.gz
+*.pth
