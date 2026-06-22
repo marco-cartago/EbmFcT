@@ -6,7 +6,7 @@ A little project (a test) in which we try to factorize a probability density ove
 
 $$p(\underline{x}) = \frac{1}{Z} \Psi _0(\underline{x}) \Psi _1 (\underline{x}) \cdots \Psi_k({\underline{x}})$$
 
-where each ${\Psi_k}$ is an unnomalized probaiblity density, and each component is pushed, trough training to be as indipendent as possibile fom the others.
+where each ${\Psi_k}$ is an unnomalized probaiblity density, and each component is pushed, trough training to be as indipendent as possibile from the others. The goal of this kind of project is to have a factorization given by what we call "Energy Heads" (EH) each one modelling a different aspect of the data generating distribution.
 
 ## Build instructions (Linux)
 
@@ -26,9 +26,45 @@ python3 main.py
 At this point in time the project is more a QR code generator than an image generator, even so, its interesting to work on.
 
 ---
+## Architecture:
+At this point we are using a Deep Convolutional Network for every EH and the output of the entire model it's just a sum over those results.
+Things to investigate:
+ - possibility of logsum(output) to make the energy non-negative. This can improve the convergence of the model. In any case in the literature about EBM it's shown how this doesn't improve performances and leads to a collapse around zero value
+ - possibility to differentiate the architecture for every EH to implicitly bias the distribution towards different levels of details or different kind of aspects of data.
 
+## Loss:
+At the moment we are working on a contrastive learning framework, pushing the model to learn high (not sure) energy for good samples and low energy for the ones OOD.
+The current loss for the model is formalized over a batch $\mathcal{B}_S$ of generated samples and a batch of training data $\mathcal{B}_D$ as:
+
+```math
+\mathcal{L}(\theta) = \mathcal{L}_{CD} + \lambda\,\mathcal{L}_{reg} + \gamma\,\mathcal{L}_{corr}
+```
+
+where
+
+```math
+\mathcal{L}_{CD} = \frac{1}{|\mathcal{B}_D|} \sum_{x\in\mathcal{B}_D} f_\theta(x) - \frac{1}{|\mathcal{B}_S|} \sum_{x\in\mathcal{B}_S} f_\theta(x)
+```
+
+```math
+\mathcal{L}_{reg}= \frac{1}{|\mathcal{B}_D|} \sum_{x\in\mathcal{B}_D} f_\theta(x)^2 + \frac{1}{|\mathcal{B}_S|} \sum_{x\in\mathcal{B}_S} f_\theta(x)^2
+```
+
+```math
+\mathcal{L}_{corr} = \mathcal{C}(h_D) + \mathcal{C}(h_S)
+```
+Things to investigate:
+- pass
+  
+## Sampling:
+The sampling strategy for this kind of project can is a combination of Persistent Contrastive Divergence an Stochastic Gradient Langevin Sampling, a MCMC method that exploit the gradient of the enrgy function tu move the current sample towards one with higher energy and adding a gaussian noise factor to favor exploration. The PCD influence is on the fact that we still maintain a persistent chain so we don't initialize at random for every single point but we start from the last point of the previous chain and producing a sample by performing gradient ascent.
+Key problems with this approach:
+ - There is the possibility that the sampler becomes "too good" in finding the highest points in the energy landscape and produce samples in that direction instead of the one truly modeled. In that case the model is learning to approximate a wrong lanscape.
+ - Computational cost given by MCMC
+
+---
 TODO:
- -[] Try with logsum output
- -[] Scheduler on langevin steps
- -[] Langevin sampling on subset of pixel
+ -Try with logsum output
+ -Scheduler on langevin steps
+ -Langevin sampling on subset of pixel
 
