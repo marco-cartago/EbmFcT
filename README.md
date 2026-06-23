@@ -63,21 +63,22 @@ Key problems with this approach:
  - Computational cost given by MCMC
 
 ## Benchmarks:
-- Human looking at picture and saying "mmmmmmmmmmmmmmmmmmmmmm, for me impossible" (Ref: https://youtu.be/ilfmlWVRAgQ?si=9I_bAYY09utl8eJa)
+- Human looking at picture and saying *"mmmmmmmmmmmmmmmmmmmmmm, for me impossible"* (Ref: https://youtu.be/ilfmlWVRAgQ?si=9I_bAYY09utl8eJa)
+- Image generation from the FashionMnist dataset
 
 ## Correlation problem
 We need to make the different EHs to learn more of SEMANTIC uncorrelations instead of numerical ones.
 Tried:
 - Penalizing the correlation between outputs of heads -> the model learn to change just magnitudes or sign of the energy
 - Penalizing the gradient of the heads on the imput -> the heads look at the same area of the image but with different pixels
+
 To try:
 - Penalize KL divergence using the energies given by every head of the batch as distributions (not sure will work because it's always a numerical than Semantic)
 - For me it mus be something about the gradients of every EH
 
-## 
----
-TODO:
- -Try with logsum output
- -Scheduler on langevin steps
- -Langevin sampling on subset of pixel
+
+# TODO:
+- Try with logsum output
+- Scheduler on langevin steps
+- Langevin sampling on subset of pixel
 
