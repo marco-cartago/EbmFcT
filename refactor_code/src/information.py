@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from icecream import ic
 
 class EntropyNetwork(nn.Module):
 
