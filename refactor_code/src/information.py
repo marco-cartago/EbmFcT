@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from icecream import ic
 
 class EntropyNetwork(nn.Module):
 
@@ -32,21 +33,24 @@ class TotalCorrelationEstimator:
     def marginal_entropy(self, x, network):
         t = network(x)
         et = torch.exp(t)
-        return torch.mean(t) - torch.log(torch.mean(et))
+        return torch.mean(t) - torch.log(torch.mean(et) + 1e-8)
 
     def joint_entropy(self, x):
         t = self.joint_network(x)
         et = torch.exp(t)
-        return torch.mean(t) - torch.log(torch.mean(et))
+        return torch.mean(t) - torch.log(torch.mean(et) + 1e-8)
 
     def total_correlation(self, x):
         sum_marginal_h = 0.0
         for i in range(self.d):
             xi = x[:, i].unsqueeze(1)
             h = self.marginal_entropy(xi, self.marginal_networks[i])
+            ic(h)
             sum_marginal_h = sum_marginal_h + h
 
         h_joint = self.joint_entropy(x)
+        ic(h_joint)
+        ic(sum_marginal_h)
         tc = sum_marginal_h - h_joint
         return tc
 
