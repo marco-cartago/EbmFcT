@@ -35,17 +35,15 @@ class EBM(nn.Module):
             [EnergyHead() for _ in range(n_heads)]
         )
         self.head_outputs = torch.empty(batch_size, n_heads)
-        # self.head_weights = nn.Parameter(torch.randn(n_heads, 1))
 
     def forward(self, x, head_idx=None):
 
         if head_idx is not None:
-
             h_o = self.heads[head_idx](x).squeeze(-1)
 
         else:
-
             h_o = torch.stack([head(x).squeeze(-1) for head in self.heads], dim=1)
+            self.head_outputs = h_o # Used to estimate the TC
 
         if h_o.dim() == 1:
             energy = h_o
