@@ -14,7 +14,7 @@ class EntropyNetwork(nn.Module):
     def forward(self, x):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = F.relu(self.fc3(x))
         return x
 
 class TotalCorrelationEstimator:
