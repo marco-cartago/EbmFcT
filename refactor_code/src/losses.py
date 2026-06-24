@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from information import TotalCorrelationEstimator
+from src.information import TotalCorrelationEstimator
 
 def cd_loss(model, x_real, x_fake, energy_regularization=0.05, corr_param=0.1, return_components=False):
     e_real, h_real = model(x_real)
