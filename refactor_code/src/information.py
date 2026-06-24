@@ -45,12 +45,9 @@ class TotalCorrelationEstimator:
         for i in range(self.d):
             xi = x[:, i].unsqueeze(1)
             h = self.marginal_entropy(xi, self.marginal_networks[i])
-            ic(h)
             sum_marginal_h = sum_marginal_h + h
 
         h_joint = self.joint_entropy(x)
-        ic(h_joint)
-        ic(sum_marginal_h)
         tc = sum_marginal_h - h_joint
         return tc
 
