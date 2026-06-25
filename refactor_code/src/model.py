@@ -8,16 +8,23 @@ class EnergyHead(nn.Module):
         self.net = nn.Sequential(
             nn.utils.spectral_norm(nn.Conv2d(1, 16, 3, padding=1)),
             nn.GELU(),
-            nn.utils.spectral_norm(nn.Conv2d(16, 32, 4, stride=2, padding=1)), # 14x14
+
+            nn.utils.spectral_norm(nn.Conv2d(16, 32, 4, stride=2, padding=1)),  # 14×14
             nn.GELU(),
-            nn.utils.spectral_norm(nn.Conv2d(32, 64, 4, stride=2, padding=1)), # 7x7
+
+            nn.utils.spectral_norm(nn.Conv2d(32, 64, 4, stride=2, padding=1)),  # 7×7
             nn.GELU(),
+
             nn.Flatten(),
-            nn.utils.spectral_norm(nn.Linear(64 * 7 * 7, 1))
+
+            nn.utils.spectral_norm(nn.Linear(64 * 7 * 7, 7 * 7)),
+            nn.GELU(),
+
+            nn.utils.spectral_norm(nn.Linear(7 * 7, 1))
         )
     
     def forward(self, x):
-        return self.net(x)  # (B, 1)
+        return self.net(x)
 
 
 
