@@ -1,5 +1,8 @@
 import torch
+import numpy as np
 import matplotlib.pyplot as plt
+from src.sampler import ReplaySampler
+from copy import deepcopy
 
 def show_single_sample(x: torch.Tensor, title: str = None):
     """
@@ -66,3 +69,32 @@ def show_grid(batch, n=8):
         axes[i].axis("off")
 
     plt.show()
+
+
+def visualize_heads(model, sampler_buffer, device, k=4, cmap="hot"):
+    model.eval()
+    n_heads = len(model.heads)
+    
+    fig, axes = plt.subplots(k, n_heads + 1)
+    model_sampler = ReplaySampler(model, img_shape=(1, 28, 28), buffer_size=50, noise_fraction=0.00, device=device)
+    model_sampler.buffer = deepcopy(sampler_buffer)
+    model_samples = model_sampler.sample(batch_size=k, steps=2000, step_size=1.5, noise_std=0.01)
+
+    axes[0, 0].set_title("Model")
+    for s in range(k):
+        axes[s, 0].imshow(model_samples[s].detach().squeeze(0).cpu().numpy(), cmap=cmap)
+        axes[s, 0].axis("off")
+
+    for i, head in enumerate(model.heads):
+        sampler = model_sampler
+        sampler.model = head
+        head_samples = sampler.sample(batch_size=k, steps=2000, step_size=1.5, noise_std=0.01)
+        
+        axes[0, i + 1].set_title(f"Head {i}")
+        for s in range(k):
+            axes[s, i + 1].imshow(head_samples[s].detach().squeeze(0).cpu().numpy(), cmap=cmap)
+            axes[s, i + 1].axis("off")
+
+    fig.suptitle("Sampled images", fontsize=12)
+    fig.tight_layout()
+    return fig

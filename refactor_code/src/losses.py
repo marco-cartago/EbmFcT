@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from src.information import TotalCorrelationEstimator
 
 def cd_loss(model, x_real, x_fake, energy_regularization=0.05, corr_param=0.1, return_components=False):
     e_real, h_real = model(x_real)
@@ -25,3 +26,26 @@ def head_correlation_penalty(H):
     corr = H.T @ H / (H.shape[0] - 1)
     corr = corr - torch.eye(corr.size(0), device=corr.device)
     return corr.pow(2).mean()
+
+
+def cd_loss_with_tc(
+        model: nn.Module, 
+        tc_estimator: TotalCorrelationEstimator, 
+        x_real, x_fake,
+        energy_regularization=0.05, 
+        tc_regularizations=0.1, 
+        return_components=False
+    ):
+    e_fake, h_fake = model(x_fake)
+    e_real, h_real = model(x_real)
+    head_outputs = model.head_outputs
+
+    cd   = e_real.mean() - e_fake.mean()
+    reg  = energy_regularization * (e_real.pow(2).mean() + e_fake.pow(2).mean())
+    tc = tc_regularizations * tc_estimator.total_correlation(head_outputs)
+
+    total = cd + reg + tc
+
+    if return_components:
+        return total, cd, reg, tc
+    return total
