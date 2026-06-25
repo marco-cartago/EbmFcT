@@ -4,16 +4,22 @@ import torch.nn.functional as F
 
 class EntropyNetwork(nn.Module):
 
-    def __init__(self, input_dim, hidden_dim=128):
+    def __init__(
+            self, 
+            input_dim, 
+            hidden_dim=128, 
+            activation = nn.GELU(approximate="tanh")
+        ):
         super(EntropyNetwork, self).__init__()
         self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, hidden_dim)
         self.fc3 = nn.Linear(hidden_dim, 1)
+        self.act = activation
 
     def forward(self, x):
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
+        x = self.act(self.fc1(x))
+        x = self.act(self.fc2(x))
+        x = F.softplus(self.fc3(x))
         return x
 
 class TotalCorrelationEstimator:
