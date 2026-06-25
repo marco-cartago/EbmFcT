@@ -76,7 +76,7 @@ def visualize_heads(model, sampler_buffer, device, k=4, cmap="hot"):
     n_heads = len(model.heads)
     
     fig, axes = plt.subplots(k, n_heads + 1)
-    model_sampler = ReplaySampler(model, img_shape=(1, 28, 28), buffer_size=50, noise_fraction=0.01, device=device)
+    model_sampler = ReplaySampler(model, img_shape=(1, 28, 28), buffer_size=50, noise_fraction=0.00, device=device)
     model_sampler.buffer = deepcopy(sampler_buffer)
     model_samples = model_sampler.sample(batch_size=k, steps=2000, step_size=1.5, noise_std=0.01)
 
