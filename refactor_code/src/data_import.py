@@ -15,7 +15,8 @@ def load_fashion_mnist(batch_size=64, shuffle=True, class_subset=None):
     """
 
     transform = transforms.Compose([
-        transforms.ToTensor()
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))  # Normalize to [-1, 1]
     ])
 
     train_set = datasets.FashionMNIST(
@@ -64,6 +65,7 @@ def load_mnist_digit(batch_size=64, shuffle=True, digit=None):
     """
     transform = transforms.Compose([
         transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))  # Normalize to [-1, 1]
     ])
 
     train_set = datasets.MNIST(
