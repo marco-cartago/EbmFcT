@@ -6,11 +6,10 @@ class EnergyHead(nn.Module):
     def __init__(self, image_shape) -> None:
         super().__init__()
         self.image_shape = image_shape
-        
         _, c, w, h = image_shape 
 
         self.net = nn.Sequential(
-            nn.utils.spectral_norm(nn.Conv2d(1, 16, 3, padding=1)),
+            nn.utils.spectral_norm(nn.Conv2d(c, 16, 3, padding=1)),
             nn.GELU(),
 
             nn.utils.spectral_norm(nn.Conv2d(16, 32, 4, stride=2, padding=1)),  # 14×14
@@ -38,11 +37,12 @@ class SmallEnergyHead(nn.Module):
             nn.Conv2d(1, 1, 3, stride=1), # (B, 1, 12, 12)
             nn.Flatten(),
             nn.GELU(),
-            nn.Linear(26 * 26, 1),
+            nn.Linear(30 * 30, 1),
         )
     
     def forward(self, x):
         return self.net(x)
+    
 
 
 class EBM(nn.Module):
