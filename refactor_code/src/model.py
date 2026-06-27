@@ -31,13 +31,17 @@ class EnergyHead(nn.Module):
 
 
 class SmallEnergyHead(nn.Module):
-    def __init__(self) -> None:
+    def __init__(self, image_shape) -> None:
         super().__init__()
+        self.image_shape = image_shape
+        b, w, h = image_shape 
         self.net = nn.Sequential(
-            nn.Conv2d(1, 1, 3, stride=1), # (B, 1, 12, 12)
+            nn.utils.spectral_norm(nn.Conv2d(b, 4, 3, stride=1)), # (B, 1, 12, 12)
             nn.Flatten(),
             nn.GELU(),
-            nn.Linear(30 * 30, 1),
+            nn.utils.spectral_norm((nn.Linear(4 * (w-2) * (w-2), 32))),
+            nn.GELU(),
+            nn.utils.spectral_norm(nn.Linear(32, 1))
         )
     
     def forward(self, x):
@@ -79,16 +83,16 @@ class EBM(nn.Module):
 
 class SmallEBM(nn.Module):
 
-    def __init__(self, in_dim: int, mid_dim: int, n_heads: int = 4, batch_size: int = 32) -> None:
+    def __init__(self, image_shape: tuple, mid_dim: int, n_heads: int = 4, batch_size: int = 32) -> None:
         super(SmallEBM, self).__init__()
-        self.in_dim = in_dim
+        self.in_dim = image_shape
         self.out_dim = 1
         self.mid_dim = mid_dim
         self.n_heads = n_heads
         self.device = None
 
         self.heads = nn.ModuleList(
-            [SmallEnergyHead() for _ in range(n_heads)]
+            [SmallEnergyHead(image_shape) for _ in range(n_heads)]
         )
         self.head_outputs = torch.empty(batch_size, n_heads, requires_grad=False)
 
