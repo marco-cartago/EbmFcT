@@ -2,7 +2,7 @@ import torch
 import matplotlib.pyplot as plt
 
 
-def diagnose(model, sampler, train_loader, test_loader, device="cpu", n_samples=16):
+def diagnose(model, sampler, img_shape, train_loader, test_loader, device="cpu", n_samples=16):
     model.eval()
 
     print("=" * 50)
@@ -45,7 +45,7 @@ def diagnose(model, sampler, train_loader, test_loader, device="cpu", n_samples=
         # ── 3. Energy on pure noise ───────────────────────
         print("\n[3] Energy on pure noise")
 
-        x_noise = torch.rand(64, 1, 28, 28, device=device) * 2 - 1
+        x_noise = torch.rand((64, *img_shape), device=device) * 2 - 1
         e_noise, _ = model(x_noise)
 
         print(f"  Noise  →  mean={e_noise.mean():.4f},  std={e_noise.std():.4f}")
