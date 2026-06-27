@@ -18,7 +18,7 @@ def show_single_sample(x: torch.Tensor, title: str = None, cmap: str = "Gray"):
     if x.ndim == 3:
         x = x.permute(1, 2, 0)
 
-    x = x.clamp(0, 1)
+    x = x.clamp(-1, 1)
 
     plt.imshow(x, cmap=cmap)
     if title is not None:
@@ -41,8 +41,8 @@ def compare_real_fake(real: torch.Tensor, fake: torch.Tensor):
     real = real.permute(1, 2, 0)
     fake = fake.permute(1, 2, 0)
 
-    real = real.clamp(0, 1)
-    fake = fake.clamp(0, 1)
+    real = real.clamp(-1, 1)
+    fake = fake.clamp(-1, 1)
 
     fig, ax = plt.subplots(1, 2, figsize=(6, 3))
 
@@ -64,7 +64,7 @@ def show_grid(batch, n=8):
     fig, axes = plt.subplots(1, n, figsize=(2*n, 2))
 
     for i in range(n):
-        img = batch[i].permute(1,2,0).clamp(0,1)
+        img = batch[i].permute(1,2,0).clamp(-1,1)
         axes[i].imshow(img)
         axes[i].axis("off")
 
