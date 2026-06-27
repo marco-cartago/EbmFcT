@@ -71,12 +71,12 @@ def show_grid(batch, n=8):
     plt.show()
 
 
-def visualize_heads(model, sampler_buffer, device, k=4, cmap="hot"):
+def visualize_heads(model, sampler_buffer, img_shape, device, k=4, cmap="hot"):
     model.eval()
     n_heads = len(model.heads)
     
     fig, axes = plt.subplots(k, n_heads + 1)
-    model_sampler = ReplaySampler(model, img_shape=(1, 28, 28), buffer_size=50, noise_fraction=0.005, device=device)
+    model_sampler = ReplaySampler(model, img_shape=img_shape, buffer_size=50, noise_fraction=0.005, device=device)
     model_sampler.buffer = deepcopy(sampler_buffer)
     model_samples = model_sampler.sample(batch_size=k, steps=80, step_size=10, noise_std=0.05)
 
