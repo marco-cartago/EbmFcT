@@ -2,32 +2,48 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class EnergyHead(nn.Module):
-    def __init__(self, image_shape) -> None:
-        super().__init__()
-        self.image_shape = image_shape
-        _, c, w, h = image_shape 
+import torch
+import torch.nn as nn
+import math
 
-        self.net = nn.Sequential(
+class EnergyHead(nn.Module):
+    def __init__(self, image_shape):
+        super().__init__()
+        c, h, w = image_shape
+
+        # first three conv blocks
+        self.conv = nn.Sequential(
             nn.utils.spectral_norm(nn.Conv2d(c, 16, 3, padding=1)),
             nn.GELU(),
-
-            nn.utils.spectral_norm(nn.Conv2d(16, 32, 4, stride=2, padding=1)),  # 14×14
+            nn.utils.spectral_norm(nn.Conv2d(16, 32, 4, stride=2, padding=1)),
             nn.GELU(),
+            nn.utils.spectral_norm(nn.Conv2d(32, 64, 4, stride=2, padding=1)),
+            nn.GELU()
+        )
 
-            nn.utils.spectral_norm(nn.Conv2d(32, 64, 4, stride=2, padding=1)),  # 7×7
+        # compute output spatial size
+        h_out = math.floor((h + 2*1 - 3) / 1 + 1)
+        w_out = math.floor((w + 2*1 - 3) / 1 + 1)
+
+        h_out = math.floor((h_out + 2*1 - 4) / 2 + 1)      
+        w_out = math.floor((w_out + 2*1 - 4) / 2 + 1)
+
+        h_out = math.floor((h_out + 2*1 - 4) / 2 + 1)
+        w_out = math.floor((w_out + 2*1 - 4) / 2 + 1)
+
+        self.flat_dim = 64 * h_out * w_out
+
+        self.fc = nn.Sequential(
+            nn.utils.spectral_norm(nn.Linear(self.flat_dim, 7 * 7)),
             nn.GELU(),
-
-            nn.Flatten(),
-
-            nn.utils.spectral_norm(nn.Linear(64 * 7 * 7, 7 * 7)),
-            nn.GELU(),
-
             nn.utils.spectral_norm(nn.Linear(7 * 7, 1))
         )
-    
+
     def forward(self, x):
-        return self.net(x)
+        x = self.conv(x)
+        x = torch.flatten(x, 1)
+        return self.fc(x)
+
 
 
 class SmallEnergyHead(nn.Module):
