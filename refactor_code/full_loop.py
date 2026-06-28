@@ -13,10 +13,10 @@ from src.train import train_one_epoch
 from src.diagnostic import diagnose
 
 
-train_loader, test_loader = load_fashion_mnist(32, shuffle=True, class_subset=[9])
+train_loader, test_loader = load_fashion_mnist(batch_size=32, shape_filter= 0,)
 
 
-model = EBM(in_dim=28*28, mid_dim=150, n_heads=3, batch_size=32)
+model = EBM(in_dim=64*64, mid_dim=150, n_heads=4, batch_size=32)
 
 model.to(device)
 for h in model.heads:
@@ -29,7 +29,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, betas=(0.0, 0.999))
 
 
 
-for epoch in range(15):
+for epoch in range(5):
     epoch_loss = train_one_epoch(model, sampler, train_loader, optimizer,
                                  sample_steps=60,
                                  sample_step_size=10.0,
@@ -39,8 +39,8 @@ for epoch in range(15):
                                  device=device)
     print(f"Epoch {epoch+1}, Loss: {epoch_loss:.4f}")
     if (epoch + 1) % 5 == 0:
-        torch.save(model.state_dict(), f"checkpoint{epoch+1}_ebm_boots_3heads_150mid_32bsz.pth")
+        torch.save(model.state_dict(), f"checkpoint{epoch+1}_ebm_fmnist_3heads_150mid_64bsz.pth")
 
 diagnose(model, sampler, train_loader, test_loader, device=device, n_samples=16)
 
-torch.save(model.state_dict(), "ebm_boots_3heads_150mid_32bsz.pth")
+torch.save(model.state_dict(), "ebm_fmnist_4heads_150mid_64bsz.pth")

@@ -196,9 +196,7 @@ class ReplaySampler:
         #
         # Choose initial states
         #
-        x = self.initialize_chains(
-            batch_size,
-        )
+        x = self.initialize_chains(batch_size,)
 
         #
         # Refine through MCMC
