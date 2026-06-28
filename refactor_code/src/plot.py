@@ -82,7 +82,9 @@ def visualize_heads(model, sampler_buffer, img_shape, device, k=4, cmap="hot"):
 
     axes[0, 0].set_title("Model")
     for s in range(k):
-        axes[s, 0].imshow(model_samples[s].detach().squeeze(0).cpu().numpy(), cmap=cmap)
+        image = model_samples[s].detach().squeeze(0).cpu().numpy()
+        image_rgb = np.transpose(image, (1, 2, 0))
+        axes[s, 0].imshow(image_rgb, cmap=cmap)
         axes[s, 0].axis("off")
 
     for i, head in enumerate(model.heads):
@@ -93,7 +95,9 @@ def visualize_heads(model, sampler_buffer, img_shape, device, k=4, cmap="hot"):
         
         axes[0, i + 1].set_title(f"Head {i}")
         for s in range(k):
-            axes[s, i + 1].imshow(head_samples[s].detach().squeeze(0).cpu().numpy(), cmap=cmap)
+            image = head_samples[s].detach().squeeze(0).cpu().numpy()
+            image_rgb = np.transpose(image, (1, 2, 0))
+            axes[s, i + 1].imshow(image_rgb, cmap=cmap)
             axes[s, i + 1].axis("off")
 
     fig.suptitle("Sampled images", fontsize=12)
