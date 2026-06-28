@@ -4,6 +4,8 @@ import torch.nn.functional as F
 
 class EntropyNetwork(nn.Module):
 
+    """MI NEE implementation"""
+
     def __init__(
             self, 
             input_dim, 
@@ -11,37 +13,41 @@ class EntropyNetwork(nn.Module):
             activation = nn.GELU(approximate="tanh")
         ):
         super(EntropyNetwork, self).__init__()
-        self.fc1 = nn.Linear(input_dim, hidden_dim)
-        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
-        self.fc3 = nn.Linear(hidden_dim, 1)
-        self.act = activation
+        self.net = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            activation,
+            nn.LayerNorm(hidden_dim),
+            nn.Linear(hidden_dim, hidden_dim),
+            activation,
+            nn.LayerNorm(hidden_dim),
+            nn.Linear(hidden_dim, 1)
+        )
 
     def forward(self, x):
-        x = self.act(self.fc1(x))
-        x = self.act(self.fc2(x))
-        x = F.softplus(self.fc3(x))
-        return x
+        return self.net(x)
 
 class TotalCorrelationEstimator:
 
-    def __init__(self, d, hidden_dim=128, lr=1e-3):
+    def __init__(self, d, hidden_dim=128, lr=1e-3, max_t=15.0):
         self.d = d
         self.marginal_networks = nn.ModuleList(
             [EntropyNetwork(1, hidden_dim) for _ in range(d)]
         )
+        self.max_t = max_t
+        self.lr = lr
         self.joint_network = EntropyNetwork(d, hidden_dim)
-        self.optimizer = torch.optim.Adam(
-            list(self.marginal_networks.parameters()) + list(self.joint_network.parameters()),
-            lr=lr
-        )
+        self.parameters =  list(self.marginal_networks.parameters()) + list(self.joint_network.parameters())
+        self.optimizer = torch.optim.AdamW(self.parameters, lr=lr)
 
     def marginal_entropy(self, x, network):
         t = network(x)
+        t = torch.clamp(t, max=self.max_t)
         et = torch.exp(t)
-        return torch.mean(t) - torch.log(torch.mean(et) + 1e-8)
+        return torch.mean(t) - torch.log(torch.mean(et))
 
     def joint_entropy(self, x):
         t = self.joint_network(x)
+        t = torch.clamp(t, max=self.max_t)
         et = torch.exp(t)
         return torch.mean(t) - torch.log(torch.mean(et) + 1e-8)
 

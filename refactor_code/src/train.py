@@ -75,6 +75,7 @@ def train_one_epoch_TC(
     running_e_fake = 0.0
 
     for x_real, _ in tqdm.tqdm(train_loader):
+    # for x_real, _ in train_loader:
 
         x_real = x_real.to(device)
 

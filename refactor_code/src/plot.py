@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from src.sampler import ReplaySampler
 from copy import deepcopy
 
-def show_single_sample(x: torch.Tensor, title: str = None):
+def show_single_sample(x: torch.Tensor, title: str = None, cmap: str = "Gray"):
     """
     Visualizza una singola immagine PyTorch [C,H,W] o [H,W].
     """
@@ -20,7 +20,7 @@ def show_single_sample(x: torch.Tensor, title: str = None):
 
     x = x.clamp(-1, 1)
 
-    plt.imshow(x)
+    plt.imshow(x, cmap=cmap)
     if title is not None:
         plt.title(title)
     plt.axis("off")
@@ -71,14 +71,14 @@ def show_grid(batch, n=8):
     plt.show()
 
 
-def visualize_heads(model, sampler_buffer, device, k=4, cmap="hot"):
+def visualize_heads(model, sampler_buffer, img_shape, device, k=4, cmap="hot"):
     model.eval()
     n_heads = len(model.heads)
     
     fig, axes = plt.subplots(k, n_heads + 1)
-    model_sampler = ReplaySampler(model, img_shape=(1, 28, 28), buffer_size=50, noise_fraction=0.00, device=device)
+    model_sampler = ReplaySampler(model, img_shape=img_shape, buffer_size=50, noise_fraction=0.005, device=device)
     model_sampler.buffer = deepcopy(sampler_buffer)
-    model_samples = model_sampler.sample(batch_size=k, steps=2000, step_size=1.5, noise_std=0.01)
+    model_samples = model_sampler.sample(batch_size=k, steps=80, step_size=10, noise_std=0.05)
 
     axes[0, 0].set_title("Model")
     for s in range(k):
@@ -88,7 +88,8 @@ def visualize_heads(model, sampler_buffer, device, k=4, cmap="hot"):
     for i, head in enumerate(model.heads):
         sampler = model_sampler
         sampler.model = head
-        head_samples = sampler.sample(batch_size=k, steps=2000, step_size=1.5, noise_std=0.01)
+        sampler.buffer = deepcopy(sampler_buffer)
+        head_samples = sampler.sample(batch_size=k, steps=200, step_size=10, noise_std=0.05)
         
         axes[0, i + 1].set_title(f"Head {i}")
         for s in range(k):
