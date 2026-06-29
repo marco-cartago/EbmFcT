@@ -7,3 +7,6 @@
 /data/
 *.pyc
 *.pth
+*.gz
+*.npz
+*-ubyte
