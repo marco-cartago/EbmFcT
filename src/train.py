@@ -1,4 +1,5 @@
-from src.losses import cd_loss, cd_loss_with_tc
+from src.losses import cd_loss, head_correlation_penalty, total_correlation_TC
+from src.information import TotalCorrelationEstimator
 import torch
 import tqdm
 
@@ -18,17 +19,18 @@ def train_one_epoch(model, sampler, train_loader, optimizer, sample_steps, sampl
 
         x_neg = sampler.sample(batch_size=x_real.size(0), steps=sample_steps, step_size=sample_step_size, noise_std=sample_noise_std)
 
-        e_fake, _ = model(x_neg)
-        e_real, _ = model(x_real)
+        e_fake, h_fake = model(x_neg)
+        e_real, h_real = model(x_real)
 
-        loss, cd, reg, corr = cd_loss(
-            model=model,
-            x_fake=x_neg,
-            x_real=x_real,
+        loss, cd, reg = cd_loss(
+            e_fake=e_fake,
+            e_real=e_real,
             energy_regularization=energy_reg,
             corr_param=corr_param,
             return_components=True
         )
+        corr = corr_param * (head_correlation_penalty(h_real) + head_correlation_penalty(h_fake))
+        loss += corr
 
         running_loss  += loss.item()
         running_cd    += cd.item()
@@ -52,76 +54,7 @@ def train_one_epoch(model, sampler, train_loader, optimizer, sample_steps, sampl
     return running_loss / n
 
 
-def train_one_epoch_TC(
-        model, 
-        tc_estimator, 
-        sampler, 
-        train_loader, 
-        optimizer, 
-        sample_steps, 
-        sample_step_size, 
-        sample_noise_std, 
-        energy_reg, 
-        tc_reg, 
-        device="cpu"
-    ):
-
-    model.train()
-    running_loss = 0.0
-    running_cd = 0.0
-    running_reg = 0.0
-    running_tc = 0.0
-    running_e_real = 0.0
-    running_e_fake = 0.0
-
-    for x_real, _ in tqdm.tqdm(train_loader):
-    # for x_real, _ in train_loader:
-
-        x_real = x_real.to(device)
-
-        x_neg = sampler.sample(batch_size=x_real.size(0), steps=sample_steps, step_size=sample_step_size, noise_std=sample_noise_std)
-
-        e_fake, _ = model(x_neg)
-        e_real, _ = model(x_real)
-        mod_heads = model.head_outputs
-
-        loss, cd, reg, tc = cd_loss_with_tc(
-            model=model,
-            tc_estimator=tc_estimator,
-            x_fake=x_neg,
-            x_real=x_real,
-            energy_regularization=energy_reg,
-            tc_regularizations=tc_reg,
-            return_components=True
-        )
-
-        running_loss   += loss.item()
-        running_cd     += cd.item()
-        running_reg    += reg.item()
-        running_tc     += tc.item()
-        running_e_real += e_real.mean().item()
-        running_e_fake += e_fake.mean().item()
-
-        # Update the model weights
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        # Update the total correlation estimator
-        tc_estimator.train_step(mod_heads)
-
-    n = len(train_loader)
-    print(f"  CD:     {running_cd    / n:.4f}")
-    print(f"  Reg:    {running_reg   / n:.4f}")
-    print(f"  TC:     {running_tc  / n:.4f}")
-    print(f"  E_real: {running_e_real / n:.4f}")
-    print(f"  E_fake: {running_e_fake / n:.4f}")
-    print(f"  Gap:    {(running_e_real - running_e_fake) / n:.4f}")
-
-    return running_loss / n
-
-
-def train_one_epoch_dSprites(model, sampler, train_loader, optimizer, sample_steps, sample_step_size, sample_noise_std, energy_reg, corr_param, device="cpu"):
+def train_one_epoch_TC(model, sampler, train_loader, optimizer, sample_steps, sample_step_size, sample_noise_std, energy_reg,  tc_regularizations, tc_estimator: TotalCorrelationEstimator, device="cpu"):
 
     model.train()
     running_loss = 0.0
@@ -131,23 +64,23 @@ def train_one_epoch_dSprites(model, sampler, train_loader, optimizer, sample_ste
     running_e_real = 0.0
     running_e_fake = 0.0
 
-    for batch in tqdm.tqdm(train_loader):
-        x_real = batch["image"]
+    for x_real, _ in tqdm.tqdm(train_loader):
+
         x_real = x_real.to(device)
 
         x_neg = sampler.sample(batch_size=x_real.size(0), steps=sample_steps, step_size=sample_step_size, noise_std=sample_noise_std)
 
-        e_fake, _ = model(x_neg)
-        e_real, _ = model(x_real)
+        e_fake, h_fake = model(x_neg)
+        e_real, h_real = model(x_real)
 
-        loss, cd, reg, corr = cd_loss(
-            model=model,
-            x_fake=x_neg,
-            x_real=x_real,
+        loss, cd, reg = cd_loss(
+            e_fake=e_fake,
+            e_real=e_real,
             energy_regularization=energy_reg,
-            corr_param=corr_param,
             return_components=True
         )
+        corr =  tc_regularizations * total_correlation_TC(model=model, tc_estimator=tc_estimator)
+        loss += corr
 
         running_loss  += loss.item()
         running_cd    += cd.item()
@@ -169,3 +102,5 @@ def train_one_epoch_dSprites(model, sampler, train_loader, optimizer, sample_ste
     print(f"  Gap:    {(running_e_real - running_e_fake) / n:.4f}")
 
     return running_loss / n
+
+

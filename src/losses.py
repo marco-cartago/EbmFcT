@@ -2,20 +2,16 @@ import torch
 import torch.nn as nn
 from src.information import TotalCorrelationEstimator
 
-def cd_loss(model, x_real, x_fake, energy_regularization=0.05, corr_param=0.1, return_components=False):
-    e_real, h_real = model(x_real)
-    e_fake, h_fake = model(x_fake)
+def cd_loss(e_real, e_fake, energy_regularization=0.05, return_components=False):
 
     cd   = e_real.mean() - e_fake.mean()
     reg  = energy_regularization * (e_real.pow(2).mean() + e_fake.pow(2).mean())
-    corr = corr_param * (head_correlation_penalty(h_real) + head_correlation_penalty(h_fake))
-
-    total = cd + reg + corr
+    
+    total = cd + reg
 
     if return_components:
-        return total, cd, reg, corr
+        return total, cd, reg
     return total
-
 
 def head_correlation_penalty(H):
     if H.shape[0] < 2:
@@ -27,25 +23,12 @@ def head_correlation_penalty(H):
     corr = corr - torch.eye(corr.size(0), device=corr.device)
     return corr.pow(2).mean()
 
-
-def cd_loss_with_tc(
+def total_correlation_TC(
         model: nn.Module, 
-        tc_estimator: TotalCorrelationEstimator, 
-        x_real, x_fake,
-        energy_regularization=0.05, 
-        tc_regularizations=0.1, 
-        return_components=False
-    ):
-    e_fake, h_fake = model(x_fake)
-    e_real, h_real = model(x_real)
+        tc_estimator: TotalCorrelationEstimator
+        ):
+    
     head_outputs = model.head_outputs
-
-    cd   = e_real.mean() - e_fake.mean()
-    reg  = energy_regularization * (e_real.pow(2).mean() + e_fake.pow(2).mean())
-    tc = tc_regularizations * tc_estimator.total_correlation(head_outputs)
-
-    total = cd + reg + tc
-
-    if return_components:
-        return total, cd, reg, tc
-    return total
+    tc = tc_estimator.total_correlation(head_outputs)
+    return tc
+    
