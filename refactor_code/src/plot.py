@@ -76,28 +76,28 @@ def visualize_heads(model, sampler_buffer, img_shape, device, k=4, cmap="hot"):
     n_heads = len(model.heads)
     
     fig, axes = plt.subplots(k, n_heads + 1)
-    model_sampler = ReplaySampler(model, img_shape=img_shape, buffer_size=50, noise_fraction=0.005, device=device)
-    model_sampler.buffer = deepcopy(sampler_buffer)
-    model_samples = model_sampler.sample(batch_size=k, steps=80, step_size=10, noise_std=0.05)
+    model_sampler = ReplaySampler(model, img_shape=img_shape, buffer_size=60, noise_fraction=0.005, device=device)
+    model_sampler.buffer = sampler_buffer
+    model_samples = model_sampler.sample(batch_size=k, steps=200, step_size=0.1, noise_std=0.05)
 
     axes[0, 0].set_title("Model")
     for s in range(k):
         image = model_samples[s].detach().squeeze(0).cpu().numpy()
-        image_rgb = np.transpose(image, (1, 2, 0))
-        axes[s, 0].imshow(image_rgb, cmap=cmap)
+        # image_rgb = np.transpose(image, (1, 2, 0))
+        axes[s, 0].imshow(image, cmap=cmap)
         axes[s, 0].axis("off")
 
     for i, head in enumerate(model.heads):
         sampler = model_sampler
         sampler.model = head
         sampler.buffer = deepcopy(sampler_buffer)
-        head_samples = sampler.sample(batch_size=k, steps=200, step_size=10, noise_std=0.05)
+        head_samples = sampler.sample(batch_size=k, steps=500, step_size=10, noise_std=0.05)
         
         axes[0, i + 1].set_title(f"Head {i}")
         for s in range(k):
             image = head_samples[s].detach().squeeze(0).cpu().numpy()
-            image_rgb = np.transpose(image, (1, 2, 0))
-            axes[s, i + 1].imshow(image_rgb, cmap=cmap)
+            # image_rgb = np.transpose(image, (1, 2, 0))
+            axes[s, i + 1].imshow(image, cmap=cmap)
             axes[s, i + 1].axis("off")
 
     fig.suptitle("Sampled images", fontsize=12)
