@@ -2,8 +2,9 @@ import torch
 
 from torch.utils.data import DataLoader, Subset, Dataset
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, Subset, random_split
+from torch.utils.data import DataLoader, Subset, random_split, TensorDataset
 from disentanglement_datasets import DSprites
+from sklearn.datasets import fetch_olivetti_faces
 import numpy as np
 
 
@@ -225,3 +226,42 @@ def load_CIFAR10(batch_size=64, shuffle=True, class_subset=None):
     )
     return train_loader, test_loader
 
+
+def load_olivetti(batch_size: int = 64, shuffle: bool = True):
+    """
+    Load the Olivetti faces dataset.
+
+    Args:
+        batch_size (int): Batch size for the loaders.
+        shuffle (bool): Shuffle the training set.
+    
+    Returns:
+        train_loader, test_loader: DataLoaders for train / test splits.
+    """
+    data = fetch_olivetti_faces(data_home="./data", shuffle=True, random_state=0)
+    images = data.images
+    targets = data.target
+
+    n_samples = images.shape[0]
+    n_train = int(0.7 * n_samples)
+
+    train_imgs, test_imgs = images[:n_train], images[n_train:]
+    train_lbls, test_lbls = targets[:n_train], targets[n_train:]
+
+    train_imgs = torch.from_numpy(train_imgs).unsqueeze(1).float()
+    test_imgs  = torch.from_numpy(test_imgs).unsqueeze(1).float()
+    train_lbls = torch.from_numpy(train_lbls).long()
+    test_lbls  = torch.from_numpy(test_lbls).long()
+
+    train_set = TensorDataset(train_imgs, train_lbls)
+    test_set  = TensorDataset(test_imgs, test_lbls)
+
+    train_loader = DataLoader(train_set,
+                              batch_size=batch_size,
+                              shuffle=shuffle)
+
+    test_loader = DataLoader(test_set,
+                             batch_size=batch_size,
+                             shuffle=False)
+
+    return train_loader, test_loader
