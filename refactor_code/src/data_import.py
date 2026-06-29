@@ -16,6 +16,19 @@ def load_fashion_mnist(batch_size=64, shuffle=True, class_subset=None):
         class_subset (list, optional): List of class labels to include. If None, includes all classes.
     Returns:
         train_loader, test_loader: Data loaders for training and testing datasets.
+    Info:
+        0 T-shirt/top
+        1 Trouser
+        2 Pullover
+        3 Dress
+        4 Coat
+        5 Sandal
+        6 Shirt
+        7 Sneaker
+        8 Bag
+        9 Ankle boot
+            
+    
     """
 
     transform = transforms.Compose([
