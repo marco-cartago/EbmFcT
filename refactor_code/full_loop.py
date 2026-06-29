@@ -7,16 +7,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 from src.data_import import load_fashion_mnist
-from src.model import EnergyHead, EBM
+from src.model import EnergyHead, EBM_Old
 from src.sampler import ReplaySampler
 from src.train import train_one_epoch
 from src.diagnostic import diagnose
 
 
-train_loader, test_loader = load_fashion_mnist(batch_size=32, shape_filter= 0,)
+train_loader, test_loader = load_fashion_mnist(batch_size=32, class_subset=[0,2,9])
 
 
-model = EBM(in_dim=64*64, mid_dim=150, n_heads=4, batch_size=32)
+model = EBM_Old(in_dim= 28*28, mid_dim=150, n_heads=4, batch_size=32)
 
 model.to(device)
 for h in model.heads:

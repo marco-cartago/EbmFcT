@@ -26,11 +26,7 @@ class ReplaySampler:
         self.buffer_size = buffer_size
         self.noise_fraction = noise_fraction
 
-        self.device = (
-            device
-            if device is not None
-            else next(model.parameters()).device
-        )
+        self.device = (device if device is not None else next(model.parameters()).device)
 
         #
         # Replay buffer:
@@ -82,11 +78,7 @@ class ReplaySampler:
         #
         for _ in range(steps):
 
-            x = self.langevin_step(
-                x,
-                step_size=step_size,
-                noise_std=noise_std,
-            )
+            x = self.langevin_step(x, step_size=step_size, noise_std=noise_std)
 
         #
         # Restore model state
@@ -109,10 +101,7 @@ class ReplaySampler:
         a few are pure noise.
         """
 
-        n_noise = np.random.binomial(
-            batch_size,
-            self.noise_fraction,
-        )
+        n_noise = np.random.binomial(batch_size, self.noise_fraction)
 
         n_buffer = batch_size - n_noise
 
@@ -123,16 +112,9 @@ class ReplaySampler:
         #
         if len(self.buffer) > 0 and n_buffer > 0:
 
-            idx = np.random.choice(
-                len(self.buffer),
-                size=n_buffer,
-                replace=True,
-            )
+            idx = np.random.choice(len(self.buffer), size=n_buffer, replace=True)
 
-            old_samples = torch.stack(
-                [self.buffer[i] for i in idx],
-                dim=0,
-            )
+            old_samples = torch.stack([self.buffer[i] for i in idx], dim=0)
 
             samples.append(old_samples)
 
@@ -141,10 +123,7 @@ class ReplaySampler:
         #
         if n_noise > 0:
 
-            noise_samples = (
-                torch.rand(n_noise,*self.img_shape,)* 2 - 1
-            )
-
+            noise_samples = torch.rand(n_noise,*self.img_shape,)* 2 - 1
             samples.append(noise_samples)
 
         #
@@ -153,9 +132,7 @@ class ReplaySampler:
         #
         if len(samples) == 0:
 
-            samples.append(
-                torch.rand(batch_size,*self.img_shape,)* 2- 1
-            )
+            samples.append(torch.rand(batch_size,*self.img_shape,)* 2- 1)
 
         x = torch.cat(samples, dim=0)
 
@@ -171,9 +148,7 @@ class ReplaySampler:
 
         samples = samples.detach().cpu()
 
-        self.buffer.extend(
-            list(samples)
-        )
+        self.buffer.extend(list(samples))
 
         #
         # Keep only newest samples
@@ -201,13 +176,7 @@ class ReplaySampler:
         #
         # Refine through MCMC
         #
-        x = self.run_langevin(
-            x,
-            steps=steps,
-            step_size=step_size,
-            noise_std=noise_std,
-        )
-
+        x = self.run_langevin(x, steps=steps, step_size=step_size, noise_std=noise_std)
         #
         # Save samples
         #
@@ -238,13 +207,8 @@ class ReplaySampler:
                 noise_std=noise_std,
             )
 
-            generated.append(
-                x.detach().cpu()
-            )
+            generated.append(x.detach().cpu())
 
-        generated = torch.cat(
-            generated,
-            dim=0,
-        )
+        generated = torch.cat(generated, dim=0)
 
         return generated[:n_samples]
