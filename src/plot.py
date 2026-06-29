@@ -26,7 +26,7 @@ def show_single_sample(x: torch.Tensor, title: str = None, cmap: str = "Grays"):
     plt.axis("off")
     plt.show()
 
-def compare_real_fake(real: torch.Tensor, fake: torch.Tensor):
+def compare_real_fake(real: torch.Tensor, fake: torch.Tensor, cmap = "Grays"):
     """
     Mostra fianco a fianco un esempio reale e uno generato.
     """
@@ -46,31 +46,37 @@ def compare_real_fake(real: torch.Tensor, fake: torch.Tensor):
 
     fig, ax = plt.subplots(1, 2, figsize=(6, 3))
 
-    ax[0].imshow(real)
+    ax[0].imshow(real, cmap = cmap)
     ax[0].set_title("Real")
     ax[0].axis("off")
 
-    ax[1].imshow(fake)
+    ax[1].imshow(fake, cmap = cmap)
     ax[1].set_title("Fake / EBM sample")
     ax[1].axis("off")
 
     plt.tight_layout()
     plt.show()
 
-def show_grid(batch, n=8):
+def show_grid(batch, n=8, cmap = "Grays"):
+    """
+    Show a grid of n images from a batch
+
+    """
     batch = batch[:n].detach().cpu()
-    batch = (batch + 1) / 2  # se usi [-1,1]
+    batch = (batch + 1) / 2  # for [-1, 1] range
 
     fig, axes = plt.subplots(1, n, figsize=(2*n, 2))
 
     for i in range(n):
         img = batch[i].permute(1,2,0).clamp(-1,1)
-        axes[i].imshow(img)
+        axes[i].imshow(img, cmap = cmap)
         axes[i].axis("off")
 
     plt.show()
 
 
+
+# To CHANGE------------------------------------------------------------------------------------------------------------------------
 def visualize_heads(model, sampler_buffer, img_shape, device, k=4, cmap="hot"):
     model.eval()
     n_heads = len(model.heads)
