@@ -2,6 +2,8 @@
 /venv/
 /.venv/
 /images/
+/models/fmnist
+/models/olivetti
 /data/
 *.pyc
 *.pth
