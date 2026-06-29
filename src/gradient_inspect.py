@@ -65,7 +65,7 @@ def synthetize_image_from_head(
     device="cpu",
     img_dimension = 28):
     """
-    Trova immagini a bassa energia via gradient descent sull'input.
+    Trova immagini a bassa energia via gradient descent sull'input a partire da una head.
     
     Restituisce:
         images  : tensor [n_images, 1, 64, 64] con le immagini sintetizzate
