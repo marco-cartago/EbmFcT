@@ -3,3 +3,5 @@
 /.venv/
 /images/
 /data/
+*.pyc
+*.pth
