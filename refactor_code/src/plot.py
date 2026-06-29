@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from src.sampler import ReplaySampler
 from copy import deepcopy
 
-def show_single_sample(x: torch.Tensor, title: str = None, cmap: str = "Gray"):
+def show_single_sample(x: torch.Tensor, title: str = None, cmap: str = "Grays"):
     """
     Visualizza una singola immagine PyTorch [C,H,W] o [H,W].
     """
