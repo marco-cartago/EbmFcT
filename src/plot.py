@@ -74,7 +74,6 @@ def show_grid(batch, n=8, cmap = "Grays"):
 
     plt.show()
 
-
 def visualize_heads(model, buffer, img_shape, device, k=4, cmap="hot"):
     model.eval()
     n_heads = len(model.heads)
