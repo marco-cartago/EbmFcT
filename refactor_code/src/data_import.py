@@ -200,8 +200,7 @@ def load_CIFAR10(batch_size=64, shuffle=True, class_subset=None):
     """
 
     transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Grayscale(num_output_channels=1)
+        transforms.ToTensor()
     ])
 
     train_set = datasets.CIFAR10(

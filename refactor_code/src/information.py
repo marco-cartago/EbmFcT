@@ -28,7 +28,7 @@ class EntropyNetwork(nn.Module):
 
 class TotalCorrelationEstimator:
 
-    def __init__(self, d, hidden_dim=128, lr=1e-3, max_t=15.0):
+    def __init__(self, d, hidden_dim=128, lr=1e-2, max_t=15.0):
         self.d = d
         self.marginal_networks = nn.ModuleList(
             [EntropyNetwork(1, hidden_dim) for _ in range(d)]
