@@ -10,7 +10,8 @@ import numpy as np
 
 
 def load_fashion_mnist(batch_size=64, shuffle=True, class_subset=None):
-    """Load FashionMNIST dataset with optional class subset filtering.
+    """
+    Load FashionMNIST dataset with optional class subset filtering.
     Args:
         batch_size (int): Batch size for data loaders.
         shuffle (bool): Whether to shuffle the training data.
