@@ -26,7 +26,6 @@ def train_one_epoch(model, sampler, train_loader, optimizer, sample_steps, sampl
             e_fake=e_fake,
             e_real=e_real,
             energy_regularization=energy_reg,
-            corr_param=corr_param,
             return_components=True
         )
         corr = corr_param * (head_correlation_penalty(h_real) + head_correlation_penalty(h_fake))
