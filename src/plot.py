@@ -74,18 +74,30 @@ def show_grid(batch, n=8, cmap = "Grays"):
 
     plt.show()
 
-def visualize_heads(model, buffer, img_shape, device, k=4, cmap="Grays"):
+def visualize_heads(model, img_shape, device, 
+                    buffer=None, 
+                    steps=1000,
+                    step_size=3.0,
+                    noise_std=0.05,
+                    noise_fraction=0.0,
+                    k=4, 
+                    cmap="Grays"):
     model.eval()
     n_heads = len(model.heads)
     
     fig, axes = plt.subplots(k, n_heads + 1)
     
     # Sample from full model
-    model_sampler = ReplaySampler(model, img_shape=img_shape, buffer_size=k, 
-                                   noise_fraction=0.005, device=device)
-    model_sampler.buffer = buffer
-    model_samples = model_sampler.sample(batch_size=k, steps=1000, 
-                                         step_size=3.0, noise_std=0.05)
+    model_sampler = ReplaySampler(
+        model, img_shape=img_shape, buffer_size=k**2, 
+        noise_fraction=noise_fraction, device=device
+    )
+    if buffer is not None:
+        model_sampler.buffer = deepcopy(buffer)
+    model_samples = model_sampler.generate(
+        k, steps=steps, 
+        step_size=step_size, noise_std=noise_std
+    )
 
     # Add model samples
     axes[0, 0].set_title("Model")
@@ -96,12 +108,16 @@ def visualize_heads(model, buffer, img_shape, device, k=4, cmap="Grays"):
 
     # Sample from each head
     for i, head in enumerate(model.heads):
-        sampler = ReplaySampler(head, img_shape=img_shape, buffer_size=k, 
-                                noise_fraction=0.005, device=device)  # Add device
-        sampler.buffer = buffer  # Initialize with the same buffer
-        head_samples = sampler.sample(batch_size=k, steps=1000, 
-                                      step_size=3.0, noise_std=0.05)
-        
+        sampler = ReplaySampler(
+            head, img_shape=img_shape, buffer_size=k**2, 
+            noise_fraction=noise_fraction, device=device
+        )
+        if buffer is not None:
+            sampler.buffer = deepcopy(buffer)  # Initialize with the same buffer
+        head_samples = sampler.generate(
+            k, steps=steps, 
+            step_size=step_size, noise_std=noise_std
+        )
         axes[0, i + 1].set_title(f"Head {i}")
         for s in range(k):
             image = head_samples[s].detach().squeeze(0).cpu().numpy()
