@@ -3,44 +3,53 @@ import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 import tqdm
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 from src.data_import import load_fashion_mnist
-from src.model import EnergyHead, EBM_Old
+from src.model import EnergyHead, EBM
 from src.sampler import ReplaySampler
 from src.train import train_one_epoch
 from src.diagnostic import diagnose
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"[INFO]: device = {device}")
 
-train_loader, test_loader = load_fashion_mnist(batch_size=32, class_subset=[0,2,9])
+img_shape = (1, 28, 28)
+classes = [0]
+heads = 4
 
 
-model = EBM_Old(in_dim= 28*28, mid_dim=150, n_heads=4, batch_size=32)
+
+
+
+train_loader, test_loader = load_fashion_mnist(batch_size=32, class_subset=classes)
+print(f"[INFO]: dataset imported FMNIST(classes = {classes})        train_len = {len(train_loader.dataset)} | test_len = {len(test_loader.dataset)}")
+
+model = EBM(image_shape = img_shape, n_heads=heads, batch_size=32)
+print(f"[INFO]: model instanciated {model}  | {heads} heads")
 
 model.to(device)
 for h in model.heads:
     h.to(device)
 
-sampler = ReplaySampler(model, img_shape=(1, 28, 28), buffer_size=200, noise_fraction=0.05, device=device)
-
+sampler = ReplaySampler(model, img_shape = img_shape, buffer_size=200, noise_fraction=0.05, device=device)
+print(f"[INFO]: sampler instanciated {sampler}")
 
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, betas=(0.0, 0.999))
 
 
+epoch_loss = train_one_epoch(model, sampler, train_loader, optimizer,
+                                sample_steps=60,
+                                sample_step_size=10.0,
+                                sample_noise_std=0.005,
+                                energy_reg=0.3,
+                                corr_param=0.1,
+                                device=device)
 
-for epoch in range(5):
-    epoch_loss = train_one_epoch(model, sampler, train_loader, optimizer,
-                                 sample_steps=60,
-                                 sample_step_size=10.0,
-                                 sample_noise_std=0.005,
-                                 energy_reg=0.3,
-                                 corr_param=0.1,
-                                 device=device)
-    print(f"Epoch {epoch+1}, Loss: {epoch_loss:.4f}")
-    if (epoch + 1) % 5 == 0:
-        torch.save(model.state_dict(), f"checkpoint{epoch+1}_ebm_fmnist_3heads_150mid_64bsz.pth")
+print(f"Epoch {0}, Loss: {epoch_loss:.4f}")
+    # if (epoch + 1) % 5 == 0:
+    #     torch.save(model.state_dict(), f"checkpoint{epoch+1}_ebm_fmnist_3heads_150mid_64bsz.pth")
 
-diagnose(model, sampler, train_loader, test_loader, device=device, n_samples=16)
+diagnose(model = model, sampler = sampler, img_shape = img_shape, train_loader = train_loader, test_loader = test_loader, device=device, n_samples=100)
+print(f"[INFO]: End of diagnosis")
 
-torch.save(model.state_dict(), "ebm_fmnist_4heads_150mid_64bsz.pth")
+#torch.save(model.state_dict(), "ebm_fmnist_4heads_150mid_64bsz.pth")
