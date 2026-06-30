@@ -32,7 +32,7 @@ for h in model.heads:
 sampler = ReplaySampler(model, img_shape = img_shape, buffer_size=200, noise_fraction=0.05, device=device)
 print(f"[INFO]: sampler instanciated {sampler}")
 
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, betas=(0.001, 0.999))
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, betas=(0.000, 0.999))
 
 
 epoch_loss = train_one_epoch(model, sampler, train_loader, optimizer,

@@ -2,7 +2,10 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from src.sampler import ReplaySampler
+from src.gradient_inspect import synthetize_image_from_head, synthesize_image
 from copy import deepcopy
+
+
 
 def show_single_sample(x: torch.Tensor, title: str = None, cmap: str = "Grays"):
     """
@@ -74,12 +77,10 @@ def show_grid(batch, n=8, cmap = "Grays"):
 
     plt.show()
 
-def visualize_heads(model, img_shape, device, 
-                    buffer=None, 
+def visualize_heads(model, 
                     steps=1000,
                     step_size=3.0,
                     noise_std=0.05,
-                    noise_fraction=0.0,
                     k=4, 
                     cmap="Grays"):
     model.eval()
@@ -87,40 +88,20 @@ def visualize_heads(model, img_shape, device,
     
     fig, axes = plt.subplots(k, n_heads + 1)
     
-    # Sample from full model
-    model_sampler = ReplaySampler(
-        model, img_shape=img_shape, buffer_size=k**2, 
-        noise_fraction=noise_fraction, device=device
-    )
-    if buffer is not None:
-        model_sampler.buffer = deepcopy(buffer)
-    model_samples = model_sampler.generate(
-        k, steps=steps, 
-        step_size=step_size, noise_std=noise_std
-    )
-
     # Add model samples
     axes[0, 0].set_title("Model")
     for s in range(k):
-        image = model_samples[s].detach().squeeze(0).cpu().numpy()
+        torch_img, _ = synthesize_image(model, n_images=1, steps=steps, step_size=step_size, noise_std=noise_std)
+        image = torch_img.squeeze(0).squeeze(0).cpu().numpy()
         axes[s, 0].imshow(image, cmap=cmap)
         axes[s, 0].axis("off")
 
     # Sample from each head
     for i, head in enumerate(model.heads):
-        sampler = ReplaySampler(
-            head, img_shape=img_shape, buffer_size=k**2, 
-            noise_fraction=noise_fraction, device=device
-        )
-        if buffer is not None:
-            sampler.buffer = deepcopy(buffer)  # Initialize with the same buffer
-        head_samples = sampler.generate(
-            k, steps=steps, 
-            step_size=step_size, noise_std=noise_std
-        )
         axes[0, i + 1].set_title(f"Head {i}")
         for s in range(k):
-            image = head_samples[s].detach().squeeze(0).cpu().numpy()
+            torch_img, _ = synthetize_image_from_head(head, n_images=1, steps=steps, step_size=step_size, noise_std=noise_std)
+            image = torch_img.squeeze(0).squeeze(0).cpu().numpy()
             axes[s, i + 1].imshow(image, cmap=cmap)
             axes[s, i + 1].axis("off")
 
