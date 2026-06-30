@@ -29,7 +29,7 @@ def synthetize_image(
     elif init == "gaussian":
         x = torch.randn(n_images, 1, img_dimension, img_dimension, device=device).clamp(*clamp)
     else:
-        raise ValueError(f"init non valido: {init}")
+        raise ValueError(f"init non valfrom src.gradient_inspect import synthetize_image_from_head, synthesize_imageido: {init}")
 
     energies = []
 

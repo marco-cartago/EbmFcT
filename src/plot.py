@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from src.sampler import ReplaySampler
-from src.gradient_inspect import synthetize_image_from_head, synthesize_image
+from src.gradient_inspect import synthetize_image_from_head
 from copy import deepcopy
 
 
