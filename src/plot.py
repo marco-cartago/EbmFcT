@@ -74,30 +74,37 @@ def show_grid(batch, n=8, cmap = "Grays"):
 
     plt.show()
 
-def visualize_heads(model, buffer, img_shape, device, k=4, cmap="hot"):
+def visualize_heads(model, buffer, img_shape, device, k=4, cmap="Grays"):
     model.eval()
     n_heads = len(model.heads)
     
     fig, axes = plt.subplots(k, n_heads + 1)
-    model_sampler = ReplaySampler(model, img_shape=img_shape, buffer_size=k, noise_fraction=0.005, device=device)
+    
+    # Sample from full model
+    model_sampler = ReplaySampler(model, img_shape=img_shape, buffer_size=k, 
+                                   noise_fraction=0.005, device=device)
     model_sampler.buffer = buffer
-    model_samples = model_sampler.sample(batch_size=k, steps=500, step_size=10.0, noise_std=0.05)
+    model_samples = model_sampler.sample(batch_size=k, steps=1000, 
+                                         step_size=3.0, noise_std=0.05)
 
+    # Add model samples
     axes[0, 0].set_title("Model")
     for s in range(k):
         image = model_samples[s].detach().squeeze(0).cpu().numpy()
-        # image_rgb = np.transpose(image, (1, 2, 0))
         axes[s, 0].imshow(image, cmap=cmap)
         axes[s, 0].axis("off")
 
+    # Sample from each head
     for i, head in enumerate(model.heads):
-        sampler = ReplaySampler(model, img_shape=img_shape, buffer_size=k, noise_fraction=0.005)
-        head_samples = sampler.sample(batch_size=k, steps=500, step_size=10.0, noise_std=0.05)
+        sampler = ReplaySampler(head, img_shape=img_shape, buffer_size=k, 
+                                noise_fraction=0.005, device=device)  # Add device
+        sampler.buffer = buffer  # Initialize with the same buffer
+        head_samples = sampler.sample(batch_size=k, steps=1000, 
+                                      step_size=3.0, noise_std=0.05)
         
         axes[0, i + 1].set_title(f"Head {i}")
         for s in range(k):
             image = head_samples[s].detach().squeeze(0).cpu().numpy()
-            # image_rgb = np.transpose(image, (1, 2, 0))
             axes[s, i + 1].imshow(image, cmap=cmap)
             axes[s, i + 1].axis("off")
 
