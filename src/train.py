@@ -55,7 +55,8 @@ def train_one_epoch(model, sampler, train_loader, optimizer, sample_steps, sampl
 
 def train_one_epoch_TC(model, sampler, train_loader, optimizer, sample_steps, sample_step_size, sample_noise_std, energy_reg,  tc_regularizations, tc_estimator: TotalCorrelationEstimator, device="cpu"):
 
-    model.train()
+
+
     running_loss = 0.0
     running_cd = 0.0
     running_reg = 0.0
@@ -78,7 +79,7 @@ def train_one_epoch_TC(model, sampler, train_loader, optimizer, sample_steps, sa
             energy_regularization=energy_reg,
             return_components=True
         )
-        corr =  tc_regularizations * total_correlation_TC(model=model, tc_estimator=tc_estimator)
+        corr =  tc_regularizations * total_correlation_TC(head_optputs=h_real, tc_estimator=tc_estimator)
         loss += corr
 
         running_loss  += loss.item()
@@ -88,9 +89,14 @@ def train_one_epoch_TC(model, sampler, train_loader, optimizer, sample_steps, sa
         running_e_real += e_real.mean().item()
         running_e_fake += e_fake.mean().item()
 
+        # Update the model
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        # Update the correlation
+        tc_estimator.train_step(h_real.detach())
+
 
     n = len(train_loader)
     print(f"  CD:     {running_cd    / n:.4f}")

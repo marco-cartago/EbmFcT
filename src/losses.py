@@ -24,11 +24,9 @@ def head_correlation_penalty(H):
     return corr.pow(2).mean()
 
 def total_correlation_TC(
-        model: nn.Module, 
+        head_optputs: torch.Tensor,
         tc_estimator: TotalCorrelationEstimator
         ):
-    
-    head_outputs = model.head_outputs
-    tc = tc_estimator.total_correlation(head_outputs)
+    tc = tc_estimator.total_correlation(head_optputs)
     return tc
     

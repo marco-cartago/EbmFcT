@@ -53,7 +53,6 @@ class EBM(nn.Module):
         self.heads = nn.ModuleList(
             [EnergyHead(image_shape) for _ in range(n_heads)]
         )
-        self.head_outputs = torch.empty(batch_size, n_heads, requires_grad=False)
 
     def forward(self, x, head_idx=None):
 
@@ -62,7 +61,6 @@ class EBM(nn.Module):
 
         else:
             h_o = torch.stack([head(x).squeeze(-1) for head in self.heads], dim=1)
-            self.head_outputs = h_o.detach() # Used to estimate the TC
 
         if h_o.dim() == 1:
             energy = h_o
@@ -99,7 +97,6 @@ class SmallEBM(nn.Module):
         self.heads = nn.ModuleList(
             [SmallEnergyHead(image_shape) for _ in range(n_heads)]
         )
-        self.head_outputs = torch.empty(batch_size, n_heads, requires_grad=False)
 
     def forward(self, x, head_idx=None):
 
@@ -108,7 +105,6 @@ class SmallEBM(nn.Module):
 
         else:
             h_o = torch.stack([head(x).squeeze(-1) for head in self.heads], dim=1)
-            self.head_outputs = h_o.detach() # Used to estimate the TC
 
         if h_o.dim() == 1:
             energy = h_o
@@ -147,7 +143,7 @@ class EBM_Old(nn.Module):
         self.heads = nn.ModuleList(
             [EnergyHeadOld() for _ in range(n_heads)]
         )
-        self.head_outputs = torch.empty(batch_size, n_heads, requires_grad=False)
+
 
     def forward(self, x, head_idx=None):
 
