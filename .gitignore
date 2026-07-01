@@ -3,6 +3,7 @@
 /.venv/
 /models/fmnist
 /models/olivetti
+/models/lfw/
 /data/
 *.pyc
 *.pth
