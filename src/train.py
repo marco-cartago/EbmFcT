@@ -53,7 +53,19 @@ def train_one_epoch(model, sampler, train_loader, optimizer, sample_steps, sampl
     return running_loss / n
 
 
-def train_one_epoch_TC(model, sampler, train_loader, optimizer, sample_steps, sample_step_size, sample_noise_std, energy_reg,  tc_regularizations, tc_estimator: TotalCorrelationEstimator, device="cpu"):
+def train_one_epoch_TC(
+        model, 
+        sampler, 
+        train_loader, 
+        optimizer, 
+        sample_steps, 
+        sample_step_size, 
+        sample_noise_std, 
+        energy_reg,  
+        tc_regularizations, 
+        tc_estimator: TotalCorrelationEstimator,
+        device: torch.device = torch.device("cpu")
+    ):
 
 
 
@@ -63,6 +75,13 @@ def train_one_epoch_TC(model, sampler, train_loader, optimizer, sample_steps, sa
     running_corr = 0.0
     running_e_real = 0.0
     running_e_fake = 0.0
+
+    l_running_loss = []
+    l_running_cd = []
+    l_running_reg = []
+    l_running_corr = []
+    l_running_e_real = []
+    l_running_e_fake = []
 
     for x_real, _ in tqdm.tqdm(train_loader):
 
@@ -89,6 +108,13 @@ def train_one_epoch_TC(model, sampler, train_loader, optimizer, sample_steps, sa
         running_e_real += e_real.mean().item()
         running_e_fake += e_fake.mean().item()
 
+        l_running_loss.append(loss.item())
+        l_running_cd.append(cd.item())
+        l_running_reg.append(reg.item())
+        l_running_corr.append(corr.item())
+        l_running_e_real.append(e_real.mean().item())
+        l_running_e_fake.append(e_fake.mean().item())
+
         # Update the model
         optimizer.zero_grad()
         loss.backward()
@@ -97,8 +123,23 @@ def train_one_epoch_TC(model, sampler, train_loader, optimizer, sample_steps, sa
         # Update the correlation
         tc_estimator.train_step(h_real.detach())
 
-
     n = len(train_loader)
+
+    traininfo = {
+        "e_loss": running_loss / n,
+        "e_cd": running_cd / n,
+        "e_reg": running_reg / n,
+        "e_corr": running_corr / n,
+        "e_e_real": running_e_real / n,
+        "e_e_fake": running_e_fake / n,
+        "l_loss": l_running_loss,
+        "l_cd": l_running_cd,
+        "l_reg": l_running_reg,
+        "l_corr": l_running_corr,
+        "l_e_real": l_running_e_real,
+        "l_e_fake": l_running_e_fake
+    }
+
     print(f"  CD:     {running_cd    / n:.4f}")
     print(f"  Reg:    {running_reg   / n:.4f}")
     print(f"  Corr:   {running_corr  / n:.4f}")
@@ -106,6 +147,6 @@ def train_one_epoch_TC(model, sampler, train_loader, optimizer, sample_steps, sa
     print(f"  E_fake: {running_e_fake / n:.4f}")
     print(f"  Gap:    {(running_e_real - running_e_fake) / n:.4f}")
 
-    return running_loss / n
+    return running_loss / n, traininfo
 
 
