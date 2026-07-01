@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from src.sampler import ReplaySampler
-from src.gradient_inspect import synthetize_image_from_head, synthesize_image
+from src.gradient_inspect import synthetize_image_from_head
 from copy import deepcopy
 
 
@@ -108,3 +108,70 @@ def visualize_heads(model,
     fig.suptitle("Sampled images", fontsize=12)
     fig.tight_layout()
     return fig
+
+def visualize_head_abs_gradients(model, x, device, idx=0):
+    """
+    For every head i show |dE_i/dx| where x is a given img
+    
+    """
+    model.eval()
+    img = x[idx].unsqueeze(0).to(device)  # (1, 1, 28, 28)
+
+    n_heads = len(model.heads)
+    fig, axes = plt.subplots(1, n_heads + 1, figsize=(3 * (n_heads + 1), 3))
+
+    # Immagine originale
+    axes[0].imshow(img.squeeze().cpu().numpy(), cmap="gray")
+    axes[0].set_title("Input")
+    axes[0].axis("off")
+
+    for i, head in enumerate(model.heads):
+        x_ = img.detach().requires_grad_(True)
+        with torch.enable_grad():
+            e = head(x_).sum()
+            g = torch.autograd.grad(e, x_, only_inputs=True)[0]
+
+        g_np = g.squeeze().cpu().detach().numpy()
+        g_np = np.abs(g_np)
+        g_np = (g_np - g_np.min()) / (g_np.max() - g_np.min() + 1e-8)
+
+        axes[i + 1].imshow(g_np, cmap="hot")
+        axes[i + 1].set_title(f"Head {i}\n|dE/dx|")
+        axes[i + 1].axis("off")
+
+    plt.suptitle("|Gradient| heatmap for every head", fontsize=12)
+    plt.tight_layout()
+    plt.show()
+
+def visualize_head_gradients(model, x, device, idx=0):
+    """
+    For every head i show dE_i/dx where x is a given img
+    
+    """
+    model.eval()
+    img = x[idx].unsqueeze(0).to(device)  # (1, 1, 28, 28)
+
+    n_heads = len(model.heads)
+    fig, axes = plt.subplots(1, n_heads + 1, figsize=(3 * (n_heads + 1), 3))
+
+    # Immagine originale
+    axes[0].imshow(img.squeeze().cpu().numpy(), cmap="gray")
+    axes[0].set_title("Input")
+    axes[0].axis("off")
+
+    for i, head in enumerate(model.heads):
+        x_ = img.detach().requires_grad_(True)
+        with torch.enable_grad():
+            e = head(x_).sum()
+            g = torch.autograd.grad(e, x_, only_inputs=True)[0]
+
+        g_np = g.squeeze().cpu().detach().numpy()
+        g_np = (g_np - g_np.min()) / (g_np.max() - g_np.min() + 1e-8)
+
+        axes[i + 1].imshow(g_np, cmap="PiYG")
+        axes[i + 1].set_title(f"Head {i}\ndE/dx")
+        axes[i + 1].axis("off")
+
+    plt.suptitle("Gradient heatmap for every head", fontsize=12)
+    plt.tight_layout()
+    plt.show()

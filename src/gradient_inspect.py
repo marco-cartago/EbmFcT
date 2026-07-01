@@ -1,6 +1,6 @@
 import torch
 
-def synthesize_image(
+def synthetize_image(
     model,
     n_images=1,
     steps=500,
@@ -11,17 +11,17 @@ def synthesize_image(
     device="cpu",
     img_dimension = 28):
     """
-    Trova immagini a bassa energia via gradient descent sull'input.
+    Finds imgs with low energy from a modeled distribution.
     
-    Restituisce:
-        images  : tensor [n_images, 1, 64, 64] con le immagini sintetizzate
-        energies: lista delle energie medie ad ogni step (per diagnostica)
+    Return:
+        images  : tensor [n_images, 1, img_dimension, img_dimension] with generated imgs
+        energies: mean energies for every step
     """
     model.eval()
     for p in model.parameters():
         p.requires_grad_(False)
 
-    # Inizializzazione
+
     if isinstance(init, torch.Tensor):
         x = init.clone().to(device)
     elif init == "uniform":
@@ -29,7 +29,7 @@ def synthesize_image(
     elif init == "gaussian":
         x = torch.randn(n_images, 1, img_dimension, img_dimension, device=device).clamp(*clamp)
     else:
-        raise ValueError(f"init non valido: {init}")
+        raise ValueError(f"init non valfrom src.gradient_inspect import synthetize_image_from_head, synthesize_imageido: {init}")
 
     energies = []
 
@@ -42,7 +42,7 @@ def synthesize_image(
 
         with torch.no_grad():
             grad = x.grad
-            x = x - step_size * grad      # discesa lungo il gradiente dell'energia
+            x = x - step_size * grad      # GD
             if noise_std > 0:
                 x = x + noise_std * torch.randn_like(x)
             x = x.clamp(*clamp)
@@ -55,24 +55,24 @@ def synthesize_image(
     return x.detach(), energies
 
 def synthetize_image_from_head(
-    model,
+    model_head,
     n_images=1,
     steps=500,
     step_size=10.0,
-    noise_std=0.005,          # metti 0.0 per gradient descent puro
+    noise_std=0.005,          # 0.0 for GD pure
     init="uniform",           # "uniform" | "gaussian" | tensor iniziale
     clamp=(-1.0, 1.0),
     device="cpu",
     img_dimension = 28):
     """
-    Trova immagini a bassa energia via gradient descent sull'input a partire da una head.
+    Finds images with low energy from a modeled distribution by a head
     
-    Restituisce:
-        images  : tensor [n_images, 1, 64, 64] con le immagini sintetizzate
-        energies: lista delle energie medie ad ogni step (per diagnostica)
+    Return:
+        images  : tensor [n_images, 1, img_dimension, img_dimension] with generated imgs
+        energies: mean energies for every step
     """
-    model.eval()
-    for p in model.parameters():
+    model_head.eval()
+    for p in model_head.parameters():
         p.requires_grad_(False)
 
     # Inizializzazione
@@ -90,20 +90,20 @@ def synthetize_image_from_head(
     for step in range(steps):
         x = x.detach().requires_grad_(True)
 
-        energy = model(x)               # [n_images, 1]
+        energy = model_head(x)               # [n_images, 1]
         energy_sum = energy.sum()
         energy_sum.backward()
 
         with torch.no_grad():
             grad = x.grad
-            x = x - step_size * grad      # discesa lungo il gradiente dell'energia
+            x = x - step_size * grad
             if noise_std > 0:
                 x = x + noise_std * torch.randn_like(x)
             x = x.clamp(*clamp)
 
         energies.append(energy.mean().item())
 
-    for p in model.parameters():
+    for p in model_head.parameters():
         p.requires_grad_(True)
 
     return x.detach(), energies
