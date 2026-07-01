@@ -208,8 +208,6 @@ def load_olivetti(batch_size: int = 64, shuffle: bool = True):
     return train_loader, test_loader
 
 
-
-
 def load_lfw(batch_size=64, shuffle=True, class_subset=None, image_size=128, test_size=0.2, random_state=42, sharpen=False):
     """
     Load LFW dataset with optional class subset filtering.
