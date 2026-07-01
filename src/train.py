@@ -67,8 +67,6 @@ def train_one_epoch_TC(
         device: torch.device = torch.device("cpu")
     ):
 
-
-
     running_loss = 0.0
     running_cd = 0.0
     running_reg = 0.0
