@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from src.sampler import ReplaySampler
-from src.gradient_inspect import synthetize_image_from_head
+from src.gradient_inspect import synthetize_image_from_head, synthetize_image
 from copy import deepcopy
 
 
@@ -22,8 +22,7 @@ def show_single_sample(x: torch.Tensor, title: str = None, cmap: str = "Grays"):
         x = x.permute(1, 2, 0)
 
     x = x.clamp(-1, 1)
-
-    plt.imshow(x, cmap=cmap)
+    plt.imshow(x, cmap=cmap, vmin=-1, vmax=1)
     if title is not None:
         plt.title(title)
     plt.axis("off")
@@ -91,7 +90,7 @@ def visualize_heads(model,
     # Add model samples
     axes[0, 0].set_title("Model")
     for s in range(k):
-        torch_img, _ = synthesize_image(model, n_images=1, steps=steps, step_size=step_size, noise_std=noise_std)
+        torch_img, _ = synthetize_image(model, n_images=1, steps=steps, step_size=step_size, noise_std=noise_std)
         image = torch_img.squeeze(0).squeeze(0).cpu().numpy()
         axes[s, 0].imshow(image, cmap=cmap)
         axes[s, 0].axis("off")
@@ -109,7 +108,7 @@ def visualize_heads(model,
     fig.tight_layout()
     return fig
 
-def visualize_head_abs_gradients(model, x, device, idx=0):
+def visualize_head_abs_gradients(model, x, device, idx=0, cmap = "hot"):
     """
     For every head i show |dE_i/dx| where x is a given img
     
@@ -135,7 +134,7 @@ def visualize_head_abs_gradients(model, x, device, idx=0):
         g_np = np.abs(g_np)
         g_np = (g_np - g_np.min()) / (g_np.max() - g_np.min() + 1e-8)
 
-        axes[i + 1].imshow(g_np, cmap="hot")
+        axes[i + 1].imshow(g_np, cmap=cmap)
         axes[i + 1].set_title(f"Head {i}\n|dE/dx|")
         axes[i + 1].axis("off")
 
@@ -143,7 +142,7 @@ def visualize_head_abs_gradients(model, x, device, idx=0):
     plt.tight_layout()
     plt.show()
 
-def visualize_head_gradients(model, x, device, idx=0):
+def visualize_head_gradients(model, x, device, idx=0, cmap = "coolwarm"):
     """
     For every head i show dE_i/dx where x is a given img
     
