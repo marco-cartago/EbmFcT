@@ -20,18 +20,6 @@ def load_fashion_mnist(batch_size=64, shuffle=True, class_subset=None):
         class_subset (list, optional): List of class labels to include. If None, includes all classes.
     Returns:
         train_loader, test_loader: Data loaders for training and testing datasets.
-    Info:
-        0 T-shirt/top
-        1 Trouser
-        2 Pullover
-        3 Dress
-        4 Coat
-        5 Sandal
-        6 Shirt
-        7 Sneaker
-        8 Bag
-        9 Ankle boot
-
     """
 
     transform = transforms.Compose([
@@ -236,7 +224,7 @@ def load_lfw(batch_size=64, shuffle=True, class_subset=None, image_size=128, tes
 
     X = X.astype(np.float32) / 255.0
     X = torch.tensor(X).unsqueeze(1)
-    X = F.interpolate(X, size=(image_size, image_size), mode="bilinear", align_corners=False)
+    X = F.interpolate(X, size=(image_size, image_size), mode="bilinear")
 
     if sharpen:
         kernel = torch.tensor(
@@ -245,9 +233,11 @@ def load_lfw(batch_size=64, shuffle=True, class_subset=None, image_size=128, tes
                [0, -1,  0]]]],
             dtype=torch.float32
         )
+        kernel /= kernel.sum()
         X = F.conv2d(X, kernel, padding=1)
 
     X = torch.clamp(X, 0.0, 1.0)
+    y = torch.tensor(y, dtype=torch.long)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state, stratify=y
