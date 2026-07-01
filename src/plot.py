@@ -168,7 +168,7 @@ def visualize_head_gradients(model, x, device, idx=0):
         g_np = g.squeeze().cpu().detach().numpy()
         g_np = (g_np - g_np.min()) / (g_np.max() - g_np.min() + 1e-8)
 
-        axes[i + 1].imshow(g_np, cmap="PiYG")
+        axes[i + 1].imshow(g_np, cmap="coolwarm")
         axes[i + 1].set_title(f"Head {i}\ndE/dx")
         axes[i + 1].axis("off")
 
