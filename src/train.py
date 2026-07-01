@@ -64,6 +64,7 @@ def train_one_epoch_TC(
         energy_reg,  
         tc_regularizations, 
         tc_estimator: TotalCorrelationEstimator,
+        verbose=False,
         device: torch.device = torch.device("cpu")
     ):
 
@@ -138,12 +139,13 @@ def train_one_epoch_TC(
         "l_e_fake": l_running_e_fake
     }
 
-    print(f"  CD:     {running_cd    / n:.4f}")
-    print(f"  Reg:    {running_reg   / n:.4f}")
-    print(f"  Corr:   {running_corr  / n:.4f}")
-    print(f"  E_real: {running_e_real / n:.4f}")
-    print(f"  E_fake: {running_e_fake / n:.4f}")
-    print(f"  Gap:    {(running_e_real - running_e_fake) / n:.4f}")
+    if verbose:
+        print(f"  CD:     {running_cd    / n:.4f}")
+        print(f"  Reg:    {running_reg   / n:.4f}")
+        print(f"  Corr:   {running_corr  / n:.4f}")
+        print(f"  E_real: {running_e_real / n:.4f}")
+        print(f"  E_fake: {running_e_fake / n:.4f}")
+        print(f"  Gap:    {(running_e_real - running_e_fake) / n:.4f}")
 
     return running_loss / n, traininfo
 
