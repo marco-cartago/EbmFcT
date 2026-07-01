@@ -1,12 +1,14 @@
-import torch
 
 from torch.utils.data import DataLoader, Subset, Dataset
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, Subset, random_split, TensorDataset
 from disentanglement_datasets import DSprites
-from sklearn.datasets import fetch_olivetti_faces
-import numpy as np
+from sklearn.datasets import fetch_olivetti_faces, fetch_lfw_people
+from sklearn.model_selection import train_test_split
 
+import torch
+import torch.nn.functional as F
+import numpy as np
 
 
 def load_fashion_mnist(batch_size=64, shuffle=True, class_subset=None):
@@ -29,8 +31,7 @@ def load_fashion_mnist(batch_size=64, shuffle=True, class_subset=None):
         7 Sneaker
         8 Bag
         9 Ankle boot
-            
-    
+
     """
 
     transform = transforms.Compose([
@@ -205,3 +206,59 @@ def load_olivetti(batch_size: int = 64, shuffle: bool = True):
                              shuffle=False)
 
     return train_loader, test_loader
+
+
+
+
+def load_lfw(batch_size=64, shuffle=True, class_subset=None, image_size=128, test_size=0.2, random_state=42, sharpen=False):
+    """
+    Load LFW dataset with optional class subset filtering.
+    Args:
+        batch_size (int): Batch size for data loaders.
+        shuffle (bool): Whether to shuffle the training data.
+        class_subset (list or None): Optional list of person names to keep.
+        sharpen (bool): Whether to apply a mild sharpening filter after resizing.
+    """
+    lfw = fetch_lfw_people(color=False, resize=0.5, min_faces_per_person=20)
+    X = lfw.images
+    y = lfw.target
+    names = np.array(lfw.target_names)
+
+    # Subset class selection
+    if class_subset is not None:
+        mask = np.isin(names[y], class_subset)
+        X = X[mask]
+        y = y[mask]
+        kept_names = np.unique(names[y])
+        name_to_idx = {name: i for i, name in enumerate(kept_names)}
+        y = np.array([name_to_idx[names[i]] for i in y])
+        class_names = kept_names
+    else:
+        class_names = names
+
+    X = X.astype(np.float32) / 255.0
+    X = torch.tensor(X).unsqueeze(1)
+    X = F.interpolate(X, size=(image_size, image_size), mode="bilinear", align_corners=False)
+
+    if sharpen:
+        kernel = torch.tensor(
+            [[[[0, -1,  0],
+               [-1,  5, -1],
+               [0, -1,  0]]]],
+            dtype=torch.float32
+        )
+        X = F.conv2d(X, kernel, padding=1)
+
+    X = torch.clamp(X, 0.0, 1.0)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state, stratify=y
+    )
+
+    train_ds = TensorDataset(X_train, y_train)
+    test_ds = TensorDataset(X_test, y_test)
+
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=shuffle)
+    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False)
+
+    return train_loader, test_loader, class_names
