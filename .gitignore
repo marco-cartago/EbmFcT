@@ -1,9 +1,7 @@
 /__pycache__/
 /venv/
 /.venv/
-/models/fmnist
-/models/olivetti
-/models/lfw/
+/models/
 /data/
 *.pyc
 *.pth
@@ -12,3 +10,6 @@
 *-ubyte
 /images/FMNIST/*_GIF/
 donofrio*
+
+baseline_models.py
+train_other_models.py
