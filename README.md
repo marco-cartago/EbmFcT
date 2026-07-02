@@ -8,6 +8,8 @@ $$p(\underline{x}) = \frac{1}{Z} \Psi _0(\underline{x}) \Psi _1 (\underline{x}) 
 
 where each ${\Psi_k}$ is an unnomalized probaiblity density, and each component is pushed, trough training to be as indipendent as possibile from the others. The goal of this kind of project is to have a factorization given by what we call "Energy Heads" (EH) each one modelling a different aspect of the data generating distribution.
 
+
+![Generation](https://github.com/marco-cartago/EbmFcT/blob/main/images/FMNIST/Generation_new_model_boot.gif)
 ## Build instructions (Linux)
 
 For building the code of the project first build a local enviroment and install the *requirements*:

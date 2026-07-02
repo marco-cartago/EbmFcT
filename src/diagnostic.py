@@ -1,5 +1,6 @@
 import torch
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def diagnose(model, sampler, img_shape, train_loader, test_loader, device="cpu", n_samples=16):
@@ -100,3 +101,55 @@ def diagnose(model, sampler, img_shape, train_loader, test_loader, device="cpu",
     print("\n" + "=" * 50)
     print("DONE")
     print("=" * 50)
+
+
+def mean_energy(model, train_loader, test_loader, device, n_batches=5):
+    model.eval()
+    energies_train = []
+    energies_test = []
+
+    with torch.no_grad():
+        for i, (x, _) in enumerate(train_loader):
+            if i >= n_batches: break
+            e, _ = model(x.to(device))
+            energies_train.append(e.mean().item())
+        
+        for i, (x, _) in enumerate(test_loader):
+            if i >= n_batches: break
+            e, _ = model(x.to(device))
+            energies_test.append(e.mean().item())
+        
+
+        mean_e_train = np.mean(energies_train)
+        mean_e_test = np.mean(energies_test)
+        print(f"E_train={mean_e_train:.4g}, E_test={mean_e_test:.4g}, gap={mean_e_test-mean_e_train:.4g}")
+
+        return mean_e_train, mean_e_test
+
+def nearest_neighbor_distance(generated, train_loader, n_samples=1000, device=None, normalize=True):
+    """
+    Check the mean distance (normalized for the size of the image) between a set generated from the model and training points
+    If the distance goes to zero, the model may be overfitting by generating samples really close to data points
+    """
+    device = device or generated.device
+
+    train_data = []
+    n_collected = 0
+    for x, _ in train_loader:
+        train_data.append(x)
+        n_collected += x.size(0)
+        if n_collected >= n_samples:
+            break
+
+    train_data = torch.cat(train_data, dim=0)[:n_samples].to(device)
+
+    gen_flat = generated.view(generated.size(0), -1)
+    train_flat = train_data.view(train_data.size(0), -1)
+
+    dists = torch.cdist(gen_flat, train_flat)
+
+    if normalize:
+        dists = dists / (gen_flat.size(1) ** 0.5)  # RMS distance per pixel
+
+    min_dists, min_idx = dists.min(dim=1)
+    return min_dists, min_idx

@@ -212,3 +212,6 @@ class ReplaySampler:
         generated = torch.cat(generated, dim=0)
 
         return generated[:n_samples]
+    
+    def reset_buffer(self):
+        self.buffer = []
