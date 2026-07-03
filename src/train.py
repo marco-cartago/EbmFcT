@@ -64,7 +64,9 @@ def train_one_epoch_TC(
         energy_reg,  
         tc_regularizations, 
         tc_estimator: TotalCorrelationEstimator,
-        verbose=False,
+        scheduler=None,
+        clip_gradient: bool = False,
+        verbose: bool = False,
         device: torch.device = torch.device("cpu")
     ):
 
@@ -117,10 +119,16 @@ def train_one_epoch_TC(
         # Update the model
         optimizer.zero_grad()
         loss.backward()
+        if clip_gradient: 
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
 
-        # Update the correlation
+        # Update the TC estimator
         tc_estimator.train_step(h_real.detach())
+
+        # LR scheduler step
+        if scheduler is not None:
+            scheduler.step()
 
     n = len(train_loader)
 
