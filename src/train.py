@@ -87,7 +87,7 @@ def train_one_epoch_TC(
         tc_estimator: TotalCorrelationEstimator,
         scheduler=None,
         clip_gradient: bool = False,
-        train_noise: bool = True,
+        train_noise: float | None = None,
         verbose: bool = False,
         device: torch.device = torch.device("cpu")
     ):
@@ -109,11 +109,14 @@ def train_one_epoch_TC(
     for x_real, _ in tqdm.tqdm(train_loader):
 
         x_real = x_real.to(device)
-        if train_noise:
-            small_noise = torch.randn_like(x_real) * 0.005
+        if train_noise is not None:
+            small_noise = torch.randn_like(x_real) * train_noise
             x_real.add_(small_noise).clamp_(min=-1.0, max=1.0)
 
-        x_neg = sampler.sample(batch_size=x_real.size(0), steps=sample_steps, step_size=sample_step_size, noise_std=sample_noise_std)
+        x_neg = sampler.sample(
+            batch_size=x_real.size(0), steps=sample_steps, 
+            step_size=sample_step_size, noise_std=sample_noise_std
+        )
 
         e_fake, h_fake = model(x_neg)
         e_real, h_real = model(x_real)
@@ -124,7 +127,10 @@ def train_one_epoch_TC(
             energy_regularization=energy_reg,
             return_components=True
         )
-        corr =  tc_regularizations * total_correlation_TC(head_optputs=h_real, tc_estimator=tc_estimator)
+        corr =  (
+            tc_regularizations * 
+            total_correlation_TC(head_optputs=h_real, tc_estimator=tc_estimator)
+        )
         loss += corr
 
         running_loss  += loss.item()
