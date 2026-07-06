@@ -3,7 +3,21 @@ from src.information import TotalCorrelationEstimator
 import torch
 import tqdm
 
-def train_one_epoch(model, sampler, train_loader, optimizer, sample_steps, sample_step_size, sample_noise_std, energy_reg, corr_param, device="cpu"):
+def train_one_epoch(
+        model, 
+        sampler, 
+        train_loader, 
+        optimizer, 
+        sample_steps, 
+        sample_step_size, 
+        sample_noise_std, 
+        energy_reg, 
+        corr_param, 
+        scheduler = None,
+        clip_gradient = False,
+        device="cpu",
+        verbose=False
+    ):
 
     model.train()
     running_loss = 0.0
@@ -40,15 +54,22 @@ def train_one_epoch(model, sampler, train_loader, optimizer, sample_steps, sampl
 
         optimizer.zero_grad()
         loss.backward()
+        if clip_gradient: 
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
 
+        # Scheduler step
+        if scheduler is not None:
+            scheduler.step()
+
     n = len(train_loader)
-    print(f"  CD:     {running_cd    / n:.4f}")
-    print(f"  Reg:    {running_reg   / n:.4f}")
-    print(f"  Corr:   {running_corr  / n:.4f}")
-    print(f"  E_real: {running_e_real / n:.4f}")
-    print(f"  E_fake: {running_e_fake / n:.4f}")
-    print(f"  Gap:    {(running_e_real - running_e_fake) / n:.4f}")
+    if verbose:
+        print(f"  CD:     {running_cd    / n:.4f}")
+        print(f"  Reg:    {running_reg   / n:.4f}")
+        print(f"  Corr:   {running_corr  / n:.4f}")
+        print(f"  E_real: {running_e_real / n:.4f}")
+        print(f"  E_fake: {running_e_fake / n:.4f}")
+        print(f"  Gap:    {(running_e_real - running_e_fake) / n:.4f}")
 
     return running_loss / n
 
@@ -66,6 +87,7 @@ def train_one_epoch_TC(
         tc_estimator: TotalCorrelationEstimator,
         scheduler=None,
         clip_gradient: bool = False,
+        train_noise: bool = True
         verbose: bool = False,
         device: torch.device = torch.device("cpu")
     ):
@@ -87,6 +109,9 @@ def train_one_epoch_TC(
     for x_real, _ in tqdm.tqdm(train_loader):
 
         x_real = x_real.to(device)
+        if train_noise:
+            small_noise = torch.randn_like(x_real) * 0.005
+            x_real.add_(small_noise).clamp_(min=-1.0, max=1.0)
 
         x_neg = sampler.sample(batch_size=x_real.size(0), steps=sample_steps, step_size=sample_step_size, noise_std=sample_noise_std)
 
