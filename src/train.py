@@ -87,7 +87,7 @@ def train_one_epoch_TC(
         tc_estimator: TotalCorrelationEstimator,
         scheduler=None,
         clip_gradient: bool = False,
-        train_noise: bool = True
+        train_noise: bool = True,
         verbose: bool = False,
         device: torch.device = torch.device("cpu")
     ):
