@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+
+
 def _permute_independently(x: torch.Tensor) -> torch.Tensor:
     """
     Shuffle each column of x independently across the batch.
@@ -25,6 +27,7 @@ class MINE_TC_Estimator:
     split, here there is only ONE network, and joint/marginal samples are
     genuinely different distributions.
     """
+
     def __init__(self, d, hidden_dim=128, lr=1e-4, max_t=15.0):
         self.d = d
         self.max_t = max_t
@@ -47,7 +50,8 @@ class MINE_TC_Estimator:
         x_marginal = _permute_independently(x)
         t_joint = self.net(x)
         t_marginal = torch.clamp(self.net(x_marginal), max=self.max_t)
-        tc = torch.mean(t_joint) - torch.log(torch.mean(torch.exp(t_marginal)) + 1e-8)
+        tc = torch.mean(t_joint) - \
+            torch.log(torch.mean(torch.exp(t_marginal)) + 1e-8)
         return tc
 
     def train_step(self, x):
@@ -78,6 +82,7 @@ class EntropyNetwork(nn.Module):
     Input:  (batch, d)
     Output: (batch,) oppure (batch, 1) ridotto poi a scalare per esempio.
     """
+
     def __init__(self, input_dim: int, hidden_dim: int = 128):
         super().__init__()
 
