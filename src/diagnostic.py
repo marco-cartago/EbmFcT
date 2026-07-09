@@ -1,9 +1,31 @@
-import torch
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+
+from src.sampler import ReplaySampler
 
 
-def diagnose(model, sampler, img_shape, train_loader, test_loader, device="cpu", n_samples=16):
+def diagnose(
+    model: nn.Module,
+    sampler: ReplaySampler,
+    img_shape: tuple,
+    train_loader: DataLoader,
+    test_loader: DataLoader,
+    device="cpu",
+    n_samples=16,
+):
+    """
+    Given a model calculates and prints diagnostics on:
+     1. The difference between energy on real and on fake data (replay buffer)
+     2. Energy on pure noise
+     3. Head means and correlation on a sample batch
+     4. Size of the replay buffer
+     5. Size of the replay buffer
+     6. Visual samples
+    """
+
     model.eval()
 
     print("=" * 50)
@@ -11,7 +33,6 @@ def diagnose(model, sampler, img_shape, train_loader, test_loader, device="cpu",
     print("=" * 50)
 
     with torch.no_grad():
-
         # ── 1. Energy on real data ────────────────────────
         print("\n[1] Energy on real data")
 
@@ -36,11 +57,16 @@ def diagnose(model, sampler, img_shape, train_loader, test_loader, device="cpu",
         # ── 2. Energy on fake data ────────────────────────
         print("\n[2] Energy on fake data (Langevin samples)")
 
-        x_neg = sampler.sample(batch_size=64, steps=100, step_size=10.0, noise_std=0.005)
+        x_neg = sampler.sample(
+            batch_size=64, steps=100, step_size=10.0, noise_std=0.005
+        )
         e_fake, _ = model(x_neg)
 
         print(f"  Fake   →  mean={e_fake.mean():.4f},  std={e_fake.std():.4f}")
-        print(f"  Gap (E_real_train - E_fake) = {(e_train.mean() - e_fake.mean()):.4f}  ", end="")
+        print(
+            f"  Gap (E_real_train - E_fake) = {(e_train.mean() - e_fake.mean()):.4f}  ",
+            end="",
+        )
         print("(ok)" if e_train.mean() < e_fake.mean() else "(WARNING: gap inverted)")
 
         # ── 3. Energy on pure noise ───────────────────────
@@ -50,8 +76,15 @@ def diagnose(model, sampler, img_shape, train_loader, test_loader, device="cpu",
         e_noise, _ = model(x_noise)
 
         print(f"  Noise  →  mean={e_noise.mean():.4f},  std={e_noise.std():.4f}")
-        print(f"  Gap (E_real_train - E_noise) = {(e_train.mean() - e_noise.mean()):.4f}  ", end="")
-        print("(ok)" if e_train.mean() < e_noise.mean() else "(WARNING: model assigns low energy to noise)")
+        print(
+            f"  Gap (E_real_train - E_noise) = {(e_train.mean() - e_noise.mean()):.4f}  ",
+            end="",
+        )
+        print(
+            "(ok)"
+            if e_train.mean() < e_noise.mean()
+            else "(WARNING: model assigns low energy to noise)"
+        )
 
         # ── 4. Per-head analysis ──────────────────────────
         print("\n[4] Per-head energy (on train batch)")
@@ -70,21 +103,27 @@ def diagnose(model, sampler, img_shape, train_loader, test_loader, device="cpu",
         corr = (H.T @ H / (H.shape[0] - 1)).cpu()
         corr_off = corr - torch.eye(corr.size(0))
         print(f"  Max off-diagonal correlation: {corr_off.abs().max():.4f}  ", end="")
-        print("(ok)" if corr_off.abs().max() < 0.5 else "(WARNING: heads are correlated)")
+        print(
+            "(ok)" if corr_off.abs().max() < 0.5 else "(WARNING: heads are correlated)"
+        )
 
         # ── 5. Sampler buffer ─────────────────────────────
         print("\n[5] Replay buffer")
         print(f"  Buffer size: {len(sampler.buffer)} / {sampler.buffer_size}")
         if len(sampler.buffer) > 0:
             buf = torch.stack(sampler.buffer[:64])
-            print(f"  Buffer samples  →  mean={buf.mean():.4f},  std={buf.std():.4f},  min={buf.min():.4f},  max={buf.max():.4f}")
+            print(
+                f"  Buffer samples  →  mean={buf.mean():.4f},  std={buf.std():.4f},  min={buf.min():.4f},  max={buf.max():.4f}"
+            )
 
     # ── 6. Visual samples ─────────────────────────────
     print("\n[6] Visual samples (Langevin from noise)")
-    x_vis = sampler.sample(batch_size=n_samples, steps=200, step_size=10.0, noise_std=0.005)
+    x_vis = sampler.sample(
+        batch_size=n_samples, steps=200, step_size=10.0, noise_std=0.005
+    )
     x_vis = x_vis.cpu()
 
-    grid_size = int(n_samples ** 0.5)
+    grid_size = int(n_samples**0.5)
     fig, axes = plt.subplots(grid_size, grid_size, figsize=(8, 8))
     for idx, ax in enumerate(axes.flat):
         img = x_vis[idx].squeeze()
@@ -103,30 +142,47 @@ def diagnose(model, sampler, img_shape, train_loader, test_loader, device="cpu",
     print("=" * 50)
 
 
-def mean_energy(model, train_loader, test_loader, device, n_batches=5):
+def mean_energy(
+    model: nn.Module,
+    train_loader: DataLoader,
+    test_loader: DataLoader,
+    device: torch.device,
+    n_batches=5,
+):
+    """
+    Evaluates the mean difference between the
+    energies of the train set and of the test set.
+    """
+
     model.eval()
     energies_train = []
     energies_test = []
 
     with torch.no_grad():
         for i, (x, _) in enumerate(train_loader):
-            if i >= n_batches: break
+            if i >= n_batches:
+                break
             e, _ = model(x.to(device))
             energies_train.append(e.mean().item())
-        
+
         for i, (x, _) in enumerate(test_loader):
-            if i >= n_batches: break
+            if i >= n_batches:
+                break
             e, _ = model(x.to(device))
             energies_test.append(e.mean().item())
-        
 
         mean_e_train = np.mean(energies_train)
         mean_e_test = np.mean(energies_test)
-        print(f"E_train={mean_e_train:.4g}, E_test={mean_e_test:.4g}, gap={mean_e_test-mean_e_train:.4g}")
+        print(
+            f"E_train={mean_e_train:.4g}, E_test={mean_e_test:.4g}, gap={mean_e_test - mean_e_train:.4g}"
+        )
 
         return mean_e_train, mean_e_test
 
-def nearest_neighbor_distance(generated, train_loader, n_samples=1000, device=None, normalize=True):
+
+def nearest_neighbor_distance(
+    generated, train_loader, n_samples=1000, device=None, normalize=True
+):
     """
     Check the mean distance (normalized for the size of the image) between a set generated from the model and training points
     If the distance goes to zero, the model may be overfitting by generating samples really close to data points
