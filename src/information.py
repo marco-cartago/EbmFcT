@@ -7,9 +7,9 @@ class EntropyNetwork(nn.Module):
     """MI NEE implementation"""
 
     def __init__(
-            self, 
-            input_dim, 
-            hidden_dim=128, 
+            self,
+            input_dim,
+            hidden_dim=128,
             activation = nn.GELU(approximate="tanh")
         ):
         super(EntropyNetwork, self).__init__()
@@ -68,7 +68,7 @@ class TotalCorrelationEstimator:
         tc.backward()
         self.optimizer.step()
         return tc.item()
-    
+
     def to(self, device):
         self.joint_network.to(device)
         self.marginal_networks.to(device)

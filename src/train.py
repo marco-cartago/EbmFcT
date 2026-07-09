@@ -1,20 +1,24 @@
 import torch
+import torch.nn as nn
 import tqdm
+from torch.utils.data import DataLoader
 
 from src.information import TotalCorrelationEstimator
 from src.losses import cd_loss, head_correlation_penalty, total_correlation_TC
+from src.sampler import ReplaySampler
+
 
 
 def train_one_epoch(
-    model,
-    sampler,
-    train_loader,
-    optimizer,
-    sample_steps,
-    sample_step_size,
-    sample_noise_std,
-    energy_reg,
-    corr_param,
+    model: nn.Module,
+    sampler: ReplaySampler,
+    train_loader: DataLoader,
+    optimizer torch.optim.Optimizer,
+    sample_steps: int,
+    sample_step_size: float,
+    sample_noise_std: float,
+    energy_reg: float,
+    corr_param: float,
     scheduler=None,
     clip_gradient=False,
     device="cpu",
@@ -83,14 +87,14 @@ def train_one_epoch(
 
 
 def train_one_epoch_TC(
-    model,
-    sampler,
-    train_loader,
+    model: nn.Module,
+    sampler: ReplaySampler,
+    train_loader: DataLoader,
     optimizer,
-    sample_steps,
-    sample_step_size,
-    sample_noise_std,
-    energy_reg,
+    sample_steps: int,
+    sample_step_size: float,
+    sample_noise_std: float,
+    energy_reg: float,
     tc_regularizations,
     tc_estimator: TotalCorrelationEstimator,
     scheduler=None,

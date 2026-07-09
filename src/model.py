@@ -11,7 +11,7 @@ class EnergyHead(nn.Module):
     simple convolutional network.
     """
 
-    def __init__(self, image_shape):
+    def __init__(self, image_shape: tuple[int]):
         super().__init__()
         c, h, w = image_shape
 
@@ -43,7 +43,7 @@ class EnergyHead(nn.Module):
             nn.utils.spectral_norm(nn.Linear(7 * 7, 1))
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         x = self.conv(x)
         x = torch.flatten(x, 1)
         return self.fc(x)
@@ -60,7 +60,7 @@ class EBM(nn.Module):
             [EnergyHead(image_shape) for _ in range(n_heads)]
         )
 
-    def forward(self, x, head_idx=None):
+    def forward(self, x: torch.Tensor, head_idx=None):
 
         if head_idx is not None:
             h_o = self.heads[head_idx](x).squeeze(-1)
@@ -76,10 +76,10 @@ class EBM(nn.Module):
         return energy, h_o
 
 class SmallEnergyHead(nn.Module):
-    def __init__(self, image_shape) -> None:
+    def __init__(self, image_shape: tuple[int]) -> None:
         super().__init__()
         self.image_shape = image_shape
-        b, w, h = image_shape
+        b, w, _ = image_shape
         self.net = nn.Sequential(
             nn.utils.spectral_norm(nn.Conv2d(b, 4, 3, stride=1)), # (B, 1, 12, 12)
             nn.Flatten(),
@@ -104,7 +104,7 @@ class SmallEBM(nn.Module):
             [SmallEnergyHead(image_shape) for _ in range(n_heads)]
         )
 
-    def forward(self, x, head_idx=None):
+    def forward(self, x: torch.Tensor, head_idx: int | None = None):
 
         if head_idx is not None:
             h_o = self.heads[head_idx](x).squeeze(-1)
@@ -133,7 +133,7 @@ class EnergyHeadOld(nn.Module):
             nn.utils.spectral_norm(nn.Linear(64 * 7 * 7, 1))  # 3136 → 1
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         return self.net(x)
 
 class EBM_Old(nn.Module):
@@ -151,7 +151,7 @@ class EBM_Old(nn.Module):
         )
 
 
-    def forward(self, x, head_idx=None):
+    def forward(self, x: torch.Tensor, head_idx=None):
 
         if head_idx is not None:
             h_o = self.heads[head_idx](x).squeeze(-1)

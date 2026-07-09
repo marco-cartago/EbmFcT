@@ -28,7 +28,7 @@ class MINE_TC_Estimator:
     genuinely different distributions.
     """
 
-    def __init__(self, d, hidden_dim=128, lr=1e-4, max_t=15.0):
+    def __init__(self, d: int, hidden_dim=128, lr=1e-4, max_t=15.0):
         self.d = d
         self.max_t = max_t
         self.net = EntropyNetwork(d, hidden_dim)
@@ -42,7 +42,7 @@ class MINE_TC_Estimator:
         for p in self.net.parameters():
             p.requires_grad_(flag)
 
-    def estimate(self, x):
+    def estimate(self, x: torch.Tensor):
         """
         DV lower bound on TC(x). Differentiable w.r.t. both self.net's
         parameters and x, so it's safe to use as an upstream regularizer.
@@ -54,7 +54,7 @@ class MINE_TC_Estimator:
             torch.log(torch.mean(torch.exp(t_marginal)) + 1e-8)
         return tc
 
-    def train_step(self, x):
+    def train_step(self, x: torch.Tensor):
         """One gradient step tightening the bound (updates only self.net)."""
         self.optimizer.zero_grad()
         loss = -self.estimate(x)
@@ -63,7 +63,7 @@ class MINE_TC_Estimator:
         return -loss.item()  # positive TC estimate, for logging
 
 
-def mine_tc_regularization(head_outputs, tc_estimator: MINE_TC_Estimator):
+def mine_tc_regularization(head_outputs: torch.Tensor, tc_estimator: MINE_TC_Estimator):
     """
     TC regularization term for the model's loss. Gradients flow into
     head_outputs (hence into the model), NOT into tc_estimator's own

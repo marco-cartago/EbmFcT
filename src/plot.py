@@ -29,6 +29,7 @@ def show_single_sample(x: torch.Tensor, title: str = None, cmap: str = "Grays"):
         plt.title(title)
     plt.axis("off")
 
+
 def compare_real_fake(real: torch.Tensor, fake: torch.Tensor, cmap="Grays"):
     """
     Mostra fianco a fianco un esempio reale e uno generato.
@@ -112,7 +113,9 @@ def visualize_heads(
     return fig
 
 
-def visualize_head_abs_gradients(model: nn.Module, x: torch.Tensor, device: torch.device, idx=0, cmap="hot"):
+def visualize_head_abs_gradients(
+    model: nn.Module, x: torch.Tensor, device: torch.device, idx=0, cmap="hot"
+):
     """
     For every head i show |dE_i/dx| where x is a given img
     """
@@ -146,7 +149,9 @@ def visualize_head_abs_gradients(model: nn.Module, x: torch.Tensor, device: torc
     plt.show()
 
 
-def visualize_head_gradients(model: nn.Module, x, device, idx=0, cmap = "coolwarm"):
+def visualize_head_gradients(
+    model: nn.Module, x: torch.Tensor, device: torch.device, idx=0, cmap="coolwarm"
+):
     """
     For every head i show dE_i/dx where x is a given img
     """

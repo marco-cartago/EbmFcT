@@ -1,8 +1,10 @@
 import torch
+import torch.nn as nn
+
 
 
 def synthetize_image(
-    model,
+    model: nn.Module,
     n_images=1,
     steps=500,
     step_size=10.0,
@@ -64,7 +66,7 @@ def synthetize_image(
 
 
 def synthetize_image_from_head(
-    model_head,
+    model_head: nn.Module,
     n_images=1,
     steps=500,
     step_size=10.0,

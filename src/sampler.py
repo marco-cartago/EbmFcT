@@ -122,7 +122,7 @@ class ReplaySampler:
 
     def update_buffer(
         self,
-        sample: torch.Tensor,
+        samples: torch.Tensor,
     ):
         """
         Store new MCMC samples.
@@ -137,7 +137,7 @@ class ReplaySampler:
 
     def sample(
         self,
-        batch_size,
+        batch_size: int,
         steps=60,
         step_size=10.0,
         noise_std=0.005,
@@ -160,7 +160,7 @@ class ReplaySampler:
 
     def generate(
         self,
-        n_samples,
+        n_samples: int,
         steps=60,
         step_size=10.0,
         noise_std=0.005,
