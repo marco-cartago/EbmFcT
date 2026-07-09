@@ -1,48 +1,56 @@
 import torch
 
+
 def synthetize_image(
     model,
     n_images=1,
     steps=500,
     step_size=10.0,
-    noise_std=0.005,          # metti 0.0 per gradient descent puro
-    init="uniform",           # "uniform" | "gaussian" | tensor iniziale
+    noise_std=0.005,
+    init="uniform",
     clamp=(-1.0, 1.0),
     device="cpu",
-    img_dimension = 28):
+    img_dimension=28,
+):
     """
     Finds imgs with low energy from a modeled distribution.
-    
+
     Return:
-        images  : tensor [n_images, 1, img_dimension, img_dimension] with generated imgs
+        images: tensor [n_images, 1, img_dimension, img_dimension] with generated imgs
         energies: mean energies for every step
+        init: either "uniform" or "gaussian" on the initial tensor
     """
     model.eval()
     for p in model.parameters():
         p.requires_grad_(False)
 
-
     if isinstance(init, torch.Tensor):
         x = init.clone().to(device)
     elif init == "uniform":
-        x = torch.zeros(n_images, 1, img_dimension, img_dimension, device=device).uniform_(*clamp)
+        x = torch.zeros(
+            n_images, 1, img_dimension, img_dimension, device=device
+        ).uniform_(*clamp)
     elif init == "gaussian":
-        x = torch.randn(n_images, 1, img_dimension, img_dimension, device=device).clamp(*clamp)
+        x = torch.randn(n_images, 1, img_dimension, img_dimension, device=device).clamp(
+            *clamp
+        )
     else:
-        raise ValueError(f"init non valfrom src.gradient_inspect import synthetize_image_from_head, synthesize_imageido: {init}")
+        raise ValueError(
+            f"init non valfrom src.gradient_inspect import synthetize_image_from_head, synthesize_imageido: {init}"
+        )
 
     energies = []
 
     for step in range(steps):
         x = x.detach().requires_grad_(True)
 
-        energy, _ = model(x)               # [n_images, 1]
+        energy, _ = model(x)  # [n_images, 1]
         energy_sum = energy.sum()
         energy_sum.backward()
 
         with torch.no_grad():
             grad = x.grad
-            x = x - step_size * grad      # GD
+            x = x - step_size * grad  # GD
             if noise_std > 0:
                 x = x + noise_std * torch.randn_like(x)
             x = x.clamp(*clamp)
@@ -54,22 +62,25 @@ def synthetize_image(
 
     return x.detach(), energies
 
+
 def synthetize_image_from_head(
     model_head,
     n_images=1,
     steps=500,
     step_size=10.0,
-    noise_std=0.005,          # 0.0 for GD pure
-    init="uniform",           # "uniform" | "gaussian" | tensor iniziale
+    noise_std=0.005,
+    init="uniform",
     clamp=(-1.0, 1.0),
     device="cpu",
-    img_dimension = 28):
+    img_dimension=28,
+):
     """
     Finds images with low energy from a modeled distribution by a head
-    
+
     Return:
         images  : tensor [n_images, 1, img_dimension, img_dimension] with generated imgs
         energies: mean energies for every step
+        init: either "uniform" or "gaussian" on the initial tensor
     """
     model_head.eval()
     for p in model_head.parameters():
@@ -79,9 +90,13 @@ def synthetize_image_from_head(
     if isinstance(init, torch.Tensor):
         x = init.clone().to(device)
     elif init == "uniform":
-        x = torch.zeros(n_images, 1, img_dimension, img_dimension, device=device).uniform_(*clamp)
+        x = torch.zeros(
+            n_images, 1, img_dimension, img_dimension, device=device
+        ).uniform_(*clamp)
     elif init == "gaussian":
-        x = torch.randn(n_images, 1, img_dimension, img_dimension, device=device).clamp(*clamp)
+        x = torch.randn(n_images, 1, img_dimension, img_dimension, device=device).clamp(
+            *clamp
+        )
     else:
         raise ValueError(f"init non valido: {init}")
 
@@ -90,7 +105,7 @@ def synthetize_image_from_head(
     for step in range(steps):
         x = x.detach().requires_grad_(True)
 
-        energy = model_head(x)               # [n_images, 1]
+        energy = model_head(x)  # [n_images, 1]
         energy_sum = energy.sum()
         energy_sum.backward()
 

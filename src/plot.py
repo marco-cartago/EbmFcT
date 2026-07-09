@@ -1,10 +1,12 @@
-import torch
-import numpy as np
-import matplotlib.pyplot as plt
-from src.sampler import ReplaySampler
-from src.gradient_inspect import synthetize_image_from_head, synthetize_image
 from copy import deepcopy
 
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+import torch.nn as nn
+
+from src.gradient_inspect import synthetize_image, synthetize_image_from_head
+from src.sampler import ReplaySampler
 
 
 def show_single_sample(x: torch.Tensor, title: str = None, cmap: str = "Grays"):
@@ -26,9 +28,8 @@ def show_single_sample(x: torch.Tensor, title: str = None, cmap: str = "Grays"):
     if title is not None:
         plt.title(title)
     plt.axis("off")
-    plt.show()
 
-def compare_real_fake(real: torch.Tensor, fake: torch.Tensor, cmap = "Grays"):
+def compare_real_fake(real: torch.Tensor, fake: torch.Tensor, cmap="Grays"):
     """
     Mostra fianco a fianco un esempio reale e uno generato.
     """
@@ -48,49 +49,49 @@ def compare_real_fake(real: torch.Tensor, fake: torch.Tensor, cmap = "Grays"):
 
     fig, ax = plt.subplots(1, 2, figsize=(6, 3))
 
-    ax[0].imshow(real, cmap = cmap)
+    ax[0].imshow(real, cmap=cmap)
     ax[0].set_title("Real")
     ax[0].axis("off")
 
-    ax[1].imshow(fake, cmap = cmap)
+    ax[1].imshow(fake, cmap=cmap)
     ax[1].set_title("Fake / EBM sample")
     ax[1].axis("off")
 
     plt.tight_layout()
     plt.show()
 
-def show_grid(batch, n=8, cmap = "Grays"):
+
+def show_grid(batch: torch.Tensor, n=8, cmap="Grays"):
     """
     Show a grid of n images from a batch
-
     """
     batch = batch[:n].detach().cpu()
     batch = (batch + 1) / 2  # for [-1, 1] range
 
-    fig, axes = plt.subplots(1, n, figsize=(2*n, 2))
+    fig, axes = plt.subplots(1, n, figsize=(2 * n, 2))
 
     for i in range(n):
-        img = batch[i].permute(1,2,0).clamp(-1,1)
-        axes[i].imshow(img, cmap = cmap)
+        img = batch[i].permute(1, 2, 0).clamp(-1, 1)
+        axes[i].imshow(img, cmap=cmap)
         axes[i].axis("off")
 
     plt.show()
 
-def visualize_heads(model, 
-                    steps=1000,
-                    step_size=3.0,
-                    noise_std=0.05,
-                    k=4, 
-                    cmap="Grays"):
+
+def visualize_heads(
+    model: nn.Module, steps=1000, step_size=3.0, noise_std=0.05, k=4, cmap="Grays"
+):
     model.eval()
     n_heads = len(model.heads)
-    
+
     fig, axes = plt.subplots(k, n_heads + 1)
-    
+
     # Add model samples
     axes[0, 0].set_title("Model")
     for s in range(k):
-        torch_img, _ = synthetize_image(model, n_images=1, steps=steps, step_size=step_size, noise_std=noise_std)
+        torch_img, _ = synthetize_image(
+            model, n_images=1, steps=steps, step_size=step_size, noise_std=noise_std
+        )
         image = torch_img.squeeze(0).squeeze(0).cpu().numpy()
         axes[s, 0].imshow(image, cmap=cmap)
         axes[s, 0].axis("off")
@@ -99,7 +100,9 @@ def visualize_heads(model,
     for i, head in enumerate(model.heads):
         axes[0, i + 1].set_title(f"Head {i}")
         for s in range(k):
-            torch_img, _ = synthetize_image_from_head(head, n_images=1, steps=steps, step_size=step_size, noise_std=noise_std)
+            torch_img, _ = synthetize_image_from_head(
+                head, n_images=1, steps=steps, step_size=step_size, noise_std=noise_std
+            )
             image = torch_img.squeeze(0).squeeze(0).cpu().numpy()
             axes[s, i + 1].imshow(image, cmap=cmap)
             axes[s, i + 1].axis("off")
@@ -108,10 +111,10 @@ def visualize_heads(model,
     fig.tight_layout()
     return fig
 
-def visualize_head_abs_gradients(model, x, device, idx=0, cmap = "hot"):
+
+def visualize_head_abs_gradients(model: nn.Module, x: torch.Tensor, device: torch.device, idx=0, cmap="hot"):
     """
     For every head i show |dE_i/dx| where x is a given img
-    
     """
     model.eval()
     img = x[idx].unsqueeze(0).to(device)  # (1, 1, 28, 28)
@@ -142,10 +145,10 @@ def visualize_head_abs_gradients(model, x, device, idx=0, cmap = "hot"):
     plt.tight_layout()
     plt.show()
 
-def visualize_head_gradients(model, x, device, idx=0, cmap = "coolwarm"):
+
+def visualize_head_gradients(model: nn.Module, x, device, idx=0, cmap = "coolwarm"):
     """
     For every head i show dE_i/dx where x is a given img
-    
     """
     model.eval()
     img = x[idx].unsqueeze(0).to(device)  # (1, 1, 28, 28)

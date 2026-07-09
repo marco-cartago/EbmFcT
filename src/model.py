@@ -5,6 +5,12 @@ import torch.nn.functional as F
 import math
 
 class EnergyHead(nn.Module):
+
+    """
+    Single indipendent head for the general model. A
+    simple convolutional network.
+    """
+
     def __init__(self, image_shape):
         super().__init__()
         c, h, w = image_shape
@@ -23,7 +29,7 @@ class EnergyHead(nn.Module):
         h_out = math.floor((h + 2*1 - 3) / 1 + 1)
         w_out = math.floor((w + 2*1 - 3) / 1 + 1)
 
-        h_out = math.floor((h_out + 2*1 - 4) / 2 + 1)      
+        h_out = math.floor((h_out + 2*1 - 4) / 2 + 1)
         w_out = math.floor((w_out + 2*1 - 4) / 2 + 1)
 
         h_out = math.floor((h_out + 2*1 - 4) / 2 + 1)
@@ -73,7 +79,7 @@ class SmallEnergyHead(nn.Module):
     def __init__(self, image_shape) -> None:
         super().__init__()
         self.image_shape = image_shape
-        b, w, h = image_shape 
+        b, w, h = image_shape
         self.net = nn.Sequential(
             nn.utils.spectral_norm(nn.Conv2d(b, 4, 3, stride=1)), # (B, 1, 12, 12)
             nn.Flatten(),
@@ -82,7 +88,7 @@ class SmallEnergyHead(nn.Module):
             nn.GELU(),
             nn.utils.spectral_norm(nn.Linear(32, 1))
         )
-    
+
     def forward(self, x):
         return self.net(x)
 
