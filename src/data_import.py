@@ -1,4 +1,3 @@
-
 from torch.utils.data import DataLoader, Subset, Dataset
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, Subset, random_split, TensorDataset
@@ -22,45 +21,40 @@ def load_fashion_mnist(batch_size=64, shuffle=True, class_subset=None):
         train_loader, test_loader: Data loaders for training and testing datasets.
     """
 
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,))  # Normalize to [-1, 1]
-    ])
+    transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            transforms.Normalize((0.5,), (0.5,)),  # Normalize to [-1, 1]
+        ]
+    )
 
     train_set = datasets.FashionMNIST(
-        root="./data",
-        train=True,
-        download=True,
-        transform=transform
+        root="./data", train=True, download=True, transform=transform
     )
 
     test_set = datasets.FashionMNIST(
-        root="./data",
-        train=False,
-        download=True,
-        transform=transform
+        root="./data", train=False, download=True, transform=transform
     )
 
     if class_subset is not None:
         # Filter indices where label is in the specified class subset
-        train_idx = [i for i in range(len(train_set)) if train_set[i][1] in class_subset]
+        train_idx = [
+            i for i in range(len(train_set)) if train_set[i][1] in class_subset
+        ]
         test_idx = [i for i in range(len(test_set)) if test_set[i][1] in class_subset]
 
         train_set = Subset(train_set, train_idx)
         test_set = Subset(test_set, test_idx)
 
     train_loader = torch.utils.data.DataLoader(
-        train_set,
-        batch_size=batch_size,
-        shuffle=shuffle
+        train_set, batch_size=batch_size, shuffle=shuffle
     )
 
     test_loader = torch.utils.data.DataLoader(
-        test_set,
-        batch_size=batch_size,
-        shuffle=False
+        test_set, batch_size=batch_size, shuffle=False
     )
     return train_loader, test_loader
+
 
 def load_mnist_digit(batch_size=64, shuffle=True, digit=None):
     """Load MNIST dataset with optional digit filtering.
@@ -71,22 +65,18 @@ def load_mnist_digit(batch_size=64, shuffle=True, digit=None):
     Returns:
         train_loader, test_loader: Data loaders for training and testing datasets.
     """
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,))  # Normalize to [-1, 1]
-    ])
+    transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            transforms.Normalize((0.5,), (0.5,)),  # Normalize to [-1, 1]
+        ]
+    )
 
     train_set = datasets.MNIST(
-        root="./data",
-        train=True,
-        download=True,
-        transform=transform
+        root="./data", train=True, download=True, transform=transform
     )
     test_set = datasets.MNIST(
-        root="./data",
-        train=False,
-        download=True,
-        transform=transform
+        root="./data", train=False, download=True, transform=transform
     )
     if digit is not None:
         # Filter indices where label is the specified digit
@@ -95,7 +85,6 @@ def load_mnist_digit(batch_size=64, shuffle=True, digit=None):
 
         train_set = Subset(train_set, train_idx)
         test_set = Subset(test_set, test_idx)
-
 
     train_loader = torch.utils.data.DataLoader(
         train_set, batch_size=batch_size, shuffle=shuffle
@@ -116,42 +105,32 @@ def load_CIFAR10(batch_size=64, shuffle=True, class_subset=None):
         train_loader, test_loader: Data loaders for training and testing datasets.
     """
 
-    transform = transforms.Compose([
-        transforms.ToTensor()
-    ])
+    transform = transforms.Compose([transforms.ToTensor()])
 
     train_set = datasets.CIFAR10(
-        root="./data",
-        train=True,
-        download=True,
-        transform=transform
+        root="./data", train=True, download=True, transform=transform
     )
 
     test_set = datasets.CIFAR10(
-        root="./data",
-        train=False,
-        download=True,
-        transform=transform
+        root="./data", train=False, download=True, transform=transform
     )
 
     if class_subset is not None:
         # Filter indices where label is in the specified class subset
-        train_idx = [i for i in range(len(train_set)) if train_set[i][1] in class_subset]
+        train_idx = [
+            i for i in range(len(train_set)) if train_set[i][1] in class_subset
+        ]
         test_idx = [i for i in range(len(test_set)) if test_set[i][1] in class_subset]
 
         train_set = Subset(train_set, train_idx)
         test_set = Subset(test_set, test_idx)
 
     train_loader = torch.utils.data.DataLoader(
-        train_set,
-        batch_size=batch_size,
-        shuffle=shuffle
+        train_set, batch_size=batch_size, shuffle=shuffle
     )
 
     test_loader = torch.utils.data.DataLoader(
-        test_set,
-        batch_size=batch_size,
-        shuffle=False
+        test_set, batch_size=batch_size, shuffle=False
     )
     return train_loader, test_loader
 
@@ -163,7 +142,7 @@ def load_olivetti(batch_size: int = 64, shuffle: bool = True):
     Args:
         batch_size (int): Batch size for the loaders.
         shuffle (bool): Shuffle the training set.
-    
+
     Returns:
         train_loader, test_loader: DataLoaders for train / test splits.
     """
@@ -178,25 +157,29 @@ def load_olivetti(batch_size: int = 64, shuffle: bool = True):
     train_lbls, test_lbls = targets[:n_train], targets[n_train:]
 
     train_imgs = torch.from_numpy(train_imgs).unsqueeze(1).float()
-    test_imgs  = torch.from_numpy(test_imgs).unsqueeze(1).float()
+    test_imgs = torch.from_numpy(test_imgs).unsqueeze(1).float()
     train_lbls = torch.from_numpy(train_lbls).long()
-    test_lbls  = torch.from_numpy(test_lbls).long()
+    test_lbls = torch.from_numpy(test_lbls).long()
 
     train_set = TensorDataset(train_imgs, train_lbls)
-    test_set  = TensorDataset(test_imgs, test_lbls)
+    test_set = TensorDataset(test_imgs, test_lbls)
 
-    train_loader = DataLoader(train_set,
-                              batch_size=batch_size,
-                              shuffle=shuffle)
+    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=shuffle)
 
-    test_loader = DataLoader(test_set,
-                             batch_size=batch_size,
-                             shuffle=False)
+    test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
 
     return train_loader, test_loader
 
 
-def load_lfw(batch_size=64, shuffle=True, class_subset=None, image_size=128, test_size=0.2, random_state=42, sharpen=False):
+def load_lfw(
+    batch_size=64,
+    shuffle=True,
+    class_subset=None,
+    image_size=128,
+    test_size=0.2,
+    random_state=42,
+    sharpen=False,
+):
     """
     Load LFW dataset with optional class subset filtering.
     Args:
@@ -228,12 +211,7 @@ def load_lfw(batch_size=64, shuffle=True, class_subset=None, image_size=128, tes
 
     if sharpen:
         kernel = torch.tensor(
-            [[[[0, -1,  0],
-               [-1,  5, -1],
-               [0, -1,  0]]]],
-            dtype=torch.float32
-        )
-        kernel /= kernel.sum()
+            [[[[0, -1, 0], [-1, 5, -1], [0, -1, 0]]]], dtype=torch.float32
         X = F.conv2d(X, kernel, padding=1)
 
     X = torch.clamp(X, 0.0, 1.0)
