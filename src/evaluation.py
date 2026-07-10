@@ -1,7 +1,11 @@
-from torchmetrics.image.fid import FrechetInceptionDistance
 import torch
+from torchmetrics.image.fid import FrechetInceptionDistance
+
 
 def evaluate_sampling_fid(real_images: torch.Tensor, fake_images: torch.Tensor):
+    """
+    Evaluates the Frechet Inception Distance on the generated images.
+    """
 
     fid = FrechetInceptionDistance(feature=2048)
 
@@ -18,9 +22,10 @@ def evaluate_sampling_fid(real_images: torch.Tensor, fake_images: torch.Tensor):
 
     with torch.inference_mode():
         for i in range(0, len(real_images), batch_size):
-            fid.update(real_images[i:i+batch_size], real=True)
+            fid.update(real_images[i : i + batch_size], real=True)
 
         for i in range(0, len(fake_images), batch_size):
+            fid.update(fake_images[i : i + batch_size], real=False)
             fid.update(fake_images[i:i+batch_size], real=False)
 
     score = fid.compute()
