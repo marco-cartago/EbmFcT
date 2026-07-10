@@ -27,9 +27,9 @@ Each ${\Psi_k}$ rapresnts an unnomalized probaiblity density, and each component
     - `sampler.py`: Home to the `ReplaySampler` class, massively important for the training dynamics of presistent contrastive divergence. 
     - `train.py`: Functions for performing a single epoch of training.
 
-- `model_train.ipynb`: Setup for a general tain run for all of the three main datasets with checpoints in the `/models/` folder.
+- `model_train.ipynb`: Setup for a general train run for all of the three main datasets with checpoints in the `/models/` folder.
 - `other_models_benchmark.ipynb`: Execution of the benchmarks for the other models used for comparison, a variation auto encoder and u-net diffusion model.
-- `train_other_models.py`: File for training the benchmark models (VAE & U-net).
+- `train_other_models.py`: File for training the benchmark models (VAE & U-net diffusion).
 - `test_total_correlation.ipynb`: Training of the model with the total correlation regularization defined in `MINE.py`.
 - `toy_example.ipynb`: Experimentation of the TC regularization on a 1d density.
 
@@ -88,10 +88,10 @@ $$ \mathrm{TC}(x) = \sup_{f:X\rightarrow\mathbb{R}} \left[ \mathbb{E}_{x \sim p(
 We then replace the supremum with a maximization over a set of parametrized functions $f_\theta$ (${\theta \in \Theta}$) that is performed with gradient ascent together with the training of the EBM.
 
 ## Sampling:
-The sampling strategy for this kind of project can is a combination of Persistent Contrastive Divergence an Stochastic Gradient Langevin Sampling, a MCMC method that exploit the gradient of the enrgy function tu move the current sample towards one with higher energy and adding a gaussian noise factor to favor exploration. The PCD influence is on the fact that we still maintain a persistent chain so we don't initialize at random for every single point but we start from the last point of the previous chain and producing a sample by performing gradient ascent.
+The sampling strategy for this kind of project can is a combination of Persistent Contrastive Divergence an Stochastic Gradient Langevin Sampling, a MCMC method that exploit the gradient of the enrgy function to move the current sample towards one with higher energy and adding a gaussian noise factor to favor exploration. The PCD influence is on the fact that we still maintain a persistent chain so we don't initialize at random for every single point but we start from the last point of the previous chain and producing a sample by performing gradient ascent.
 
 Key problems with this approach:
- - There is the possibility that the sampler becomes "too good" in finding the highest points in the energy landscape and produce samples in that direction instead of the one truly modeled. In that case the model is learning to approximate a wrong lanscape.
+ - There is the possibility that the sampler becomes "too good" in finding the lowest points in the energy landscape and produce samples in that direction instead of the one truly modeled. In that case the model is learning to approximate a wrong lanscape.
  - Computational cost given by MCMC
 
 ## Interesting future directions
