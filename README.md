@@ -1,4 +1,4 @@
-# EbmFcT
+# Energy Based Density Factorization
 
 ## Project Description
 
