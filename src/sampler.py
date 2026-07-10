@@ -42,10 +42,6 @@ class ReplaySampler:
         x = (x.detach() - step_size * grad).clamp(-1.0, 1.0)
         return x
 
-    # =====================================================
-    # Run multiple Langevin steps
-    # =====================================================
-
     def run_langevin(
         self,
         x: torch.Tensor,
@@ -56,6 +52,7 @@ class ReplaySampler:
         """
         Refine samples through Langevin Dynamics.
         """
+
         # Disable parameter gradients
         was_training = self.model.training
         self.model.eval()
@@ -95,26 +92,12 @@ class ReplaySampler:
 
         # Fresh noise
         if n_noise > 0:
-            noise_samples = (
-                torch.rand(
-                    n_noise,
-                    *self.img_shape,
-                )
-                * 2
-                - 1
-            )
+            noise_samples = (torch.rand(n_noise, *self.img_shape,)* 2- 1)
             samples.append(noise_samples)
 
         # On the first iteration buffer is empty
         if len(samples) == 0:
-            samples.append(
-                torch.rand(
-                    batch_size,
-                    *self.img_shape,
-                )
-                * 2
-                - 1
-            )
+            samples.append(torch.rand(batch_size, *self.img_shape,)* 2- 1)
 
         x = torch.cat(samples, dim=0)
 
@@ -152,9 +135,7 @@ class ReplaySampler:
 
         # Refine through Langevin Dynamics and save
         x = self.run_langevin(x, steps=steps, step_size=step_size, noise_std=noise_std)
-        self.update_buffer(
-            x,
-        )
+        self.update_buffer(x,)
 
         return x
 

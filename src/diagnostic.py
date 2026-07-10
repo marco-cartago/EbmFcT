@@ -33,7 +33,7 @@ def diagnose(
     print("=" * 50)
 
     with torch.no_grad():
-        # ── 1. Energy on real data ────────────────────────
+        # 1. Energy on real data
         print("\n[1] Energy on real data")
 
         e_train_all = []
@@ -54,7 +54,7 @@ def diagnose(
         print(f"  |E_test - E_train| = {gap_train_test:.4f}  ", end="")
         print("(ok)" if gap_train_test < 0.2 else "(WARNING: possible overfit)")
 
-        # ── 2. Energy on fake data ────────────────────────
+        # 2. Energy on fake data
         print("\n[2] Energy on fake data (Langevin samples)")
 
         x_neg = sampler.sample(
@@ -69,7 +69,7 @@ def diagnose(
         )
         print("(ok)" if e_train.mean() < e_fake.mean() else "(WARNING: gap inverted)")
 
-        # ── 3. Energy on pure noise ───────────────────────
+        # 3. Energy on pure noise
         print("\n[3] Energy on pure noise")
 
         x_noise = torch.rand((64, *img_shape), device=device) * 2 - 1
@@ -86,7 +86,7 @@ def diagnose(
             else "(WARNING: model assigns low energy to noise)"
         )
 
-        # ── 4. Per-head analysis ──────────────────────────
+        # 4. Per-head analysis
         print("\n[4] Per-head energy (on train batch)")
 
         x_batch, _ = next(iter(train_loader))
@@ -107,7 +107,7 @@ def diagnose(
             "(ok)" if corr_off.abs().max() < 0.5 else "(WARNING: heads are correlated)"
         )
 
-        # ── 5. Sampler buffer ─────────────────────────────
+        # 5. Sampler buffer
         print("\n[5] Replay buffer")
         print(f"  Buffer size: {len(sampler.buffer)} / {sampler.buffer_size}")
         if len(sampler.buffer) > 0:
@@ -116,7 +116,7 @@ def diagnose(
                 f"  Buffer samples  →  mean={buf.mean():.4f},  std={buf.std():.4f},  min={buf.min():.4f},  max={buf.max():.4f}"
             )
 
-    # ── 6. Visual samples ─────────────────────────────
+    # 6. Visual samples
     print("\n[6] Visual samples (Langevin from noise)")
     x_vis = sampler.sample(
         batch_size=n_samples, steps=200, step_size=10.0, noise_std=0.005

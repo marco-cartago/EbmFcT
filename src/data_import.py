@@ -57,7 +57,8 @@ def load_fashion_mnist(batch_size=64, shuffle=True, class_subset=None):
 
 
 def load_mnist_digit(batch_size=64, shuffle=True, digit=None):
-    """Load MNIST dataset with optional digit filtering.
+    """
+    Load MNIST dataset with optional digit filtering.
     Args:
         batch_size (int): Batch size for data loaders.
         shuffle (bool): Whether to shuffle the training data.
@@ -96,7 +97,8 @@ def load_mnist_digit(batch_size=64, shuffle=True, digit=None):
 
 
 def load_CIFAR10(batch_size=64, shuffle=True, class_subset=None):
-    """Load FashionMNIST dataset with optional class subset filtering.
+    """
+    Load FashionMNIST dataset with optional class subset filtering.
     Args:
         batch_size (int): Batch size for data loaders.
         shuffle (bool): Whether to shuffle the training data.
@@ -212,6 +214,7 @@ def load_lfw(
     if sharpen:
         kernel = torch.tensor(
             [[[[0, -1, 0], [-1, 5, -1], [0, -1, 0]]]], dtype=torch.float32
+            )
         X = F.conv2d(X, kernel, padding=1)
 
     X = torch.clamp(X, 0.0, 1.0)

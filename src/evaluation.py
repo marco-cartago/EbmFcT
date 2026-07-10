@@ -17,7 +17,6 @@ def evaluate_sampling_fid(real_images: torch.Tensor, fake_images: torch.Tensor):
     real_images = (real_images * 255).clamp(0, 255).to(torch.uint8)
     fake_images = ((fake_images + 1) * 127.5).clamp(0, 255).to(torch.uint8)
 
-    # processing as batches
     batch_size = 64
 
     with torch.inference_mode():
